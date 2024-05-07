@@ -1,0 +1,34 @@
+{
+    "Categories": {
+        "Risk" : [
+            "High",
+            "Low"
+        ]
+    },
+
+    "Accounts": [
+        {
+            "name": "NVIDIA"
+        },
+        {
+            "name": "THS"
+        }
+    ],
+
+    "Assets": [
+        {
+            "name": "NVIDIA",
+            "account": "NVIDIA",
+            "Category" : {
+                "Risk" : "High"
+            }
+        },
+        {
+            "name": "A-share",
+            "account": "THS",
+            "Category" : {
+                "Risk" : "High"
+            }
+        }
+    ]
+}
