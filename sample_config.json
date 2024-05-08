@@ -1,0 +1,149 @@
+{
+    "Categories": {
+        "Risk": [
+            "High",
+            "Low"
+        ],
+        "Location": [
+            "Onshore",
+            "Offshore"
+        ]
+    },
+    "Accounts": [
+        {
+            "Name": "ABCD Bank"
+        },
+        {
+            "Name": "Binance"
+        },
+        {
+            "Name": "IB"
+        },
+        {
+            "Name": "A Share"
+        },
+        {
+            "Name": "Housing Fund"
+        },
+        {
+            "Name": "Alipay"
+        },
+        {
+            "Name": "BCDE Bank"
+        }
+    ],
+    "Assets": [
+        {
+            "Name": "Current",
+            "Account": "ABCD Bank",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Credit",
+            "Account": "ABCD Bank",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Bond",
+            "Account": "ABCD Bank",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Crypto",
+            "Account": "Binance",
+            "Category": {
+                "Risk": "High",
+                "Location": "Offshore"
+            }
+        },
+        {
+            "Name": "Equity",
+            "Account": "IB",
+            "Category": {
+                "Risk": "High",
+                "Location": "Offshore"
+            }
+        },
+        {
+            "Name": "Bond",
+            "Account": "IB",
+            "Category": {
+                "Risk": "High",
+                "Location": "Offshore"
+            }
+        },
+        {
+            "Name": "A Share",
+            "Account": "A Share",
+            "Category": {
+                "Risk": "High",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Housing Fund",
+            "Account": "Housing Fund",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Current",
+            "Account": "Alipay",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Credit",
+            "Account": "Alipay",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Fund",
+            "Account": "Alipay",
+            "Category": {
+                "Risk": "High",
+                "Location": "Onshore"
+            }
+        },
+        {
+            "Name": "Current",
+            "Account": "BCDE Bank",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Offshore"
+            }
+        },
+        {
+            "Name": "Credit",
+            "Account": "BCDE Bank",
+            "Category": {
+                "Risk": "Low",
+                "Location": "Offshore"
+            }
+        },
+        {
+            "Name": "WMP",
+            "Account": "BCDE Bank",
+            "Category": {
+                "Risk": "High",
+                "Location": "Offshore"
+            }
+        }
+    ]
+}
