@@ -78,10 +78,11 @@ if not edit_on:
         add_asset()
 else:
     col_config = {k : st.column_config.SelectboxColumn(k, options=v) for k,v in context.cat_dict.items()}
+    account_df = context.account_df()
+    col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in account_df.columns if col not in context.cat_dict})
     df = st.data_editor (
-        context.account_df(),
+        account_df,
         hide_index=True,
-        num_rows="dynamic",
         column_config=col_config
     )
     st.button("Submit", on_click=FinContext.account_from_df, args=(context, df), type="primary", key="acc_acc_df_submit")

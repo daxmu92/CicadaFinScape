@@ -4,6 +4,7 @@ import copy
 import csv
 import pandas as pd
 import numpy as np
+import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 from finsql import Account,AssetItem,FinSQL,ASSET_TABLE
@@ -47,11 +48,16 @@ class FinContext:
                     FinLogger.error(f"Doesn't find account f{acc_name}")
                 acc = self.acc[acc_name]
                 asset = AssetItem(i["Name"], acc)
+                acc.add_asset(asset)
                 if "Category" in i:
                     for cat,type in i["Category"].items():
-                        assert(cat in self.cat_dict and type in self.cat_dict[cat])
+                        if cat not in self.cat_dict:
+                            FinLogger.error(f"Found category {cat} is not in category config {self.cat_dict}")
+                            continue
+                        if (type not in self.cat_dict[cat]) and (type is not None):
+                            FinLogger.error(f"Found type {type} is not in category {cat}")
+                            continue
                         asset.add_cat(cat,type)
-                acc.add_asset(asset)
 
     def load_config_file(self, config_path):
         if os.path.exists(config_path):
@@ -207,6 +213,12 @@ class FinContext:
             cat_dict[name] = labels.split(',')
         self.cat_dict = cat_dict
         self.write_config()
+        self.clean_up_cat()
+    
+    def clean_up_cat(self):
+        for k,v in self.acc.items():
+            for ass in v.asset_list:
+                ass.cats = {k:v for k,v in ass.cats.items() if k in self.cat_dict}
     
     def add_asset(self, acc_name, asset_name, cats:dict):
         if acc_name not in self.acc:

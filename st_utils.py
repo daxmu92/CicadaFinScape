@@ -9,8 +9,15 @@ class FinWidgets:
 
 class FinLogger:
     def error(s:str):
+        print(s)
         e = RuntimeError(s)
         st.exception(e)
     def warn(s):
+        print(s)
         st.warning(s)
+    def expect(b, s = ""):
+        if not b:
+            print(s)
+            e = RuntimeError(s)
+            st.exception(e)
         
