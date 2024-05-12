@@ -142,6 +142,22 @@ class FinContext:
         # fig.update_yaxes(title_text="<b>secondary</b> Total Net Worth", secondary_y=True)
         fig.add_bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL")
         return fig
+
+    def query_latest_data(self, acc_name, ass_name):
+        with self.fsql as f:
+            r = f.query_asset(acc_name, ass_name)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+        row_id = df["DATE"].idxmax()
+        row = df.iloc[row_id]
+        return row
+    
+    def query_last_data(self, acc_name, ass_name, date):
+        with self.fsql as f:
+            r = f.query_asset(acc_name, ass_name)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+
+        closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
+        return closest_row
     
     def get_latest_date(self):
         with self.fsql as f:
@@ -301,6 +317,12 @@ class FinContext:
                         d.insert(1, v.name)
                         insert_data = {x.name:y for x,y in zip(ASSET_TABLE.ess_cols(), d)}
                         s.insert_asset(insert_data)
+            s.commit()
+    
+    def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
+        insert_data = {x.name:y for x,y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
+        with self.fsql as s:
+            s.insert_asset(insert_data)
             s.commit()
             
                         

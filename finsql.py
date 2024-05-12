@@ -202,6 +202,7 @@ class FinSQL:
 
     def delete_asset(self, acc_name, name):
         self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')
+        self.db.commit()
     
     def query_col(self, cols):
         col_str = ", ".join(cols)
