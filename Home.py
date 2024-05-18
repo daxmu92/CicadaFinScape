@@ -56,6 +56,17 @@ def reset_sample_data_dia():
         st.rerun()
 
 
+@st.experimental_dialog("CLEAR DATA")
+def clear_data_dia():
+    st.write("# WARNING: All of your data will be clear and can not recover")
+    if st.button("Confirm", key="side_bar_clear_dia_confirm"):
+        context: FinContext = st.session_state['context']
+        context.clear_config()
+        context.write_config()
+        context.init_db()
+        st.rerun()
+
+
 @st.experimental_dialog("Load data from csv file")
 def load_from_csv_dia():
     upload_file = st.file_uploader("Choose a csv file")
@@ -104,6 +115,8 @@ with st.sidebar:
     if st.button("Load from csv", key="side_bar_load_from_csv"):
         load_from_csv_dia()
     st.download_button(label="Download your data", data=context.get_all_data_csv(), file_name=f"cfs-data-{get_cur_time()}.csv", mime="text/csv")
+    if st.button("Clear Data"):
+        clear_data_dia()
 
 overview_chart = context.overview_chart()
 st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
