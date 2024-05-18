@@ -90,6 +90,22 @@ class FinContext:
             
         with open(self.config_path, 'w') as f:
             json.dump(config, f, indent=4)
+
+    def clean_up_cat(self):
+        for k,v in self.acc.items():
+            for ass in v.asset_list:
+                ass.cats = {k:v for k,v in ass.cats.items() if k in self.cat_dict}
+    
+    def add_asset(self, acc_name, asset_name, cats:dict):
+        if acc_name not in self.acc:
+            self.acc[acc_name] = Account(acc_name)
+        
+        acc = self.acc[acc_name]
+        asset = AssetItem(asset_name, acc)
+        for k,v in cats.items():
+            asset.add_cat(k,v)
+        acc.add_asset(asset)
+        self.write_config()
     
     def init_db(self):
         with self.fsql as s:
@@ -104,92 +120,19 @@ class FinContext:
         self.init_db()
         self.load_from_csv()
 
-    def asset_table(self):
-        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
-        cols = ASSET_TABLE.cols_name()
-        with self.fsql as s:
-            r = s.query_all_asset()
-            df = pd.DataFrame(r, columns=cols)
-
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH"]]
-        return df
-    
     def combine_acc_ass(df):
         df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
         return df
-    
-    def query_date(self, date):
+
+    def asset_df(self, acc_name, asset_name):
+        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
         with self.fsql as s:
-            r = s.query_date(date)
-            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+            r = s.query_asset(acc_name, asset_name)
+            df = pd.DataFrame(r, columns=cols)
+        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
+        df = df[["DATE", "ASSET", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]]
         return df
-    
-    def overview_chart(self):
-        df = self.asset_table()
-        df_sum = df.copy()
-        df_sum = df_sum.groupby("DATE")["NET_WORTH"].sum().reset_index()
-        df_sum.rename(columns={"NET_WORTH": "TOTAL_NET_WORTH"}, inplace=True)
-        fig = px.line(df, x='DATE', y='NET_WORTH', color="ASSET")
-        # TODO - add secondary y
-        # fig = go.Figure(fig)
-        # fig.add_trace(
-        #     go.Bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL"),
-        #     secondary_y=True
-        # )
-        # fig.update_layout(title_text="Wealth Overview")
-        # fig.update_yaxes(title_text="<b>primary</b> Per Asset Net Worth", secondary_y=False)
-        # fig.update_yaxes(title_text="<b>secondary</b> Total Net Worth", secondary_y=True)
-        fig.add_bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL")
-        return fig
 
-    def query_latest_data(self, acc_name, ass_name):
-        with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
-            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
-        row_id = df["DATE"].idxmax()
-        row = df.iloc[row_id]
-        return row
-    
-    def query_last_data(self, acc_name, ass_name, date):
-        with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
-            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
-
-        closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
-        return closest_row
-    
-    def get_latest_date(self):
-        with self.fsql as f:
-            r = f.query_col(["DATE"])
-            df = pd.DataFrame(r, columns=["DATE"])
-        latest = df["DATE"].max()
-        return latest
-    
-    def allocation_pie(self, date = None):
-        date = self.get_latest_date() if date is None else date
-        df = self.query_date(date)
-        df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="ASSET", title=f"{date} Asset Allocation")
-        return fig
-    
-    def category_pie(self, cat:str, date:str = None):
-        date = self.get_latest_date() if date is None else date
-        df = self.query_date(date)
-        if cat not in self.cat_dict:
-            FinLogger.error(f"{cat} is not in category config")
-        
-        def assign_cat(row):
-            acc_name = row["ACCOUNT"]
-            ass_name = row["NAME"]
-            asset:AssetItem = self.get_asset(acc_name, ass_name)
-            return asset.cats.get(cat)
-
-        df[cat] = df.apply(assign_cat, axis=1)
-        df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
-        fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
-        return fig
-    
     def account_df(self):
         cols = ["Account", "Name"]
         cols.extend([k for k in self.cat_dict])
@@ -231,36 +174,46 @@ class FinContext:
         self.write_config()
         self.clean_up_cat()
     
-    def clean_up_cat(self):
-        for k,v in self.acc.items():
-            for ass in v.asset_list:
-                ass.cats = {k:v for k,v in ass.cats.items() if k in self.cat_dict}
-    
-    def add_asset(self, acc_name, asset_name, cats:dict):
-        if acc_name not in self.acc:
-            self.acc[acc_name] = Account(acc_name)
-        
-        acc = self.acc[acc_name]
-        asset = AssetItem(asset_name, acc)
-        for k,v in cats.items():
-            asset.add_cat(k,v)
-        acc.add_asset(asset)
-        self.write_config()
-    
-    def asset_df(self, acc_name, asset_name):
-        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
+    def query_date(self, date):
         with self.fsql as s:
-            r = s.query_asset(acc_name, asset_name)
-            df = pd.DataFrame(r, columns=cols)
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]]
+            r = s.query_date(date)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         return df
+
+    def query_latest_data(self, acc_name, ass_name):
+        with self.fsql as f:
+            r = f.query_asset(acc_name, ass_name)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+        row_id = df["DATE"].idxmax()
+        row = df.iloc[row_id]
+        return row
     
+    def query_last_data(self, acc_name, ass_name, date):
+        with self.fsql as f:
+            r = f.query_asset(acc_name, ass_name)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+
+        closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
+        return closest_row
+    
+    def get_latest_date(self):
+        with self.fsql as f:
+            r = f.query_col(["DATE"])
+            df = pd.DataFrame(r, columns=["DATE"])
+        latest = df["DATE"].max()
+        return latest
+
     def get_asset(self, acc_name, asset_name):
         if acc_name not in self.acc:
             return None
         acc = self.acc[acc_name]
         return acc.asset(asset_name)
+
+    def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
+        insert_data = {x.name:y for x,y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
+        with self.fsql as s:
+            s.insert_asset(insert_data)
+            s.commit()
     
     def delete_asset(self, acc_name, asset_name):
         with self.fsql as s:
@@ -271,6 +224,59 @@ class FinContext:
         acc = self.acc[acc_name]
         acc.asset_list = [x for x in acc.asset_list if x.name != asset_name]
         self.write_config()
+    
+    def asset_table(self):
+        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
+        cols = ASSET_TABLE.cols_name()
+        with self.fsql as s:
+            r = s.query_all_asset()
+            df = pd.DataFrame(r, columns=cols)
+
+        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
+        df = df[["DATE", "ASSET", "NET_WORTH"]]
+        return df
+    
+    def overview_chart(self):
+        df = self.asset_table()
+        df_sum = df.copy()
+        df_sum = df_sum.groupby("DATE")["NET_WORTH"].sum().reset_index()
+        df_sum.rename(columns={"NET_WORTH": "TOTAL_NET_WORTH"}, inplace=True)
+        fig = px.line(df, x='DATE', y='NET_WORTH', color="ASSET")
+        # TODO - add secondary y
+        # fig = go.Figure(fig)
+        # fig.add_trace(
+        #     go.Bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL"),
+        #     secondary_y=True
+        # )
+        # fig.update_layout(title_text="Wealth Overview")
+        # fig.update_yaxes(title_text="<b>primary</b> Per Asset Net Worth", secondary_y=False)
+        # fig.update_yaxes(title_text="<b>secondary</b> Total Net Worth", secondary_y=True)
+        fig.add_bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL")
+        return fig
+
+    def allocation_pie(self, date = None):
+        date = self.get_latest_date() if date is None else date
+        df = self.query_date(date)
+        df = FinContext.combine_acc_ass(df)
+        fig = px.pie(df, values="NET_WORTH", names="ASSET", title=f"{date} Asset Allocation")
+        return fig
+    
+    def category_pie(self, cat:str, date:str = None):
+        date = self.get_latest_date() if date is None else date
+        df = self.query_date(date)
+        if cat not in self.cat_dict:
+            FinLogger.error(f"{cat} is not in category config")
+        
+        def assign_cat(row):
+            acc_name = row["ACCOUNT"]
+            ass_name = row["NAME"]
+            asset:AssetItem = self.get_asset(acc_name, ass_name)
+            return asset.cats.get(cat)
+
+        df[cat] = df.apply(assign_cat, axis=1)
+        df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
+        fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+        return fig
     
     def initialize_with_sample_data(self):
         def generate_data(range:list[pd.Period], risk, seed):
@@ -319,10 +325,4 @@ class FinContext:
                         s.insert_asset(insert_data)
             s.commit()
     
-    def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
-        insert_data = {x.name:y for x,y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
-        with self.fsql as s:
-            s.insert_asset(insert_data)
-            s.commit()
-            
                         
