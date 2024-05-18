@@ -51,9 +51,25 @@ def reset_sample_data_dia():
         context.initialize_with_sample_data()
         st.rerun()
 
+@st.experimental_dialog("Load data from csv file")
+def load_from_csv_dia():
+    upload_file = st.file_uploader("Choose a csv file")
+    if upload_file is not None:
+        df = pd.read_csv(upload_file)
+            
+        st.write("Your uploaded file:")
+        st.table(df)
+        if st.button("Submit", key = "load_csv_submit", type="primary"):
+            context.load_from_df(df)
+            st.rerun()
+    else:
+        st.warning("You need to upload a csv file")
+
 with st.sidebar:
     if st.button("Reset to Sample data", key="side_bar_reset_button"):
         reset_sample_data_dia()
+    if st.button("Load from csv", key = "side_bar_load_from_csv"):
+        load_from_csv_dia()
 
 overview_chart = context.overview_chart()
 st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)

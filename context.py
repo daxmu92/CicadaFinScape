@@ -118,7 +118,7 @@ class FinContext:
     
     def init_db_from_csv(self, csv_path):
         self.init_db()
-        self.load_from_csv()
+        self.load_from_csv(csv_path)
 
     def combine_acc_ass(df):
         df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
@@ -209,6 +209,9 @@ class FinContext:
         acc = self.acc[acc_name]
         return acc.asset(asset_name)
 
+    def has_asset(self, acc_name, asset_name):
+        return self.get_asset(acc_name, asset_name) is not None
+
     def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
         insert_data = {x.name:y for x,y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
         with self.fsql as s:
@@ -224,6 +227,14 @@ class FinContext:
         acc = self.acc[acc_name]
         acc.asset_list = [x for x in acc.asset_list if x.name != asset_name]
         self.write_config()
+    
+    def load_from_df(self, df:pd.DataFrame):
+        print(df.columns.to_list())
+        print(ASSET_TABLE.cols_name())
+        assert(df.columns.to_list() == ASSET_TABLE.cols_name())
+        for index, row in df.iterrows():
+            print(row.to_list())
+            self.insert_asset(*row.to_list())
     
     def asset_table(self):
         #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
@@ -262,10 +273,10 @@ class FinContext:
         return fig
     
     def category_pie(self, cat:str, date:str = None):
-        date = self.get_latest_date() if date is None else date
-        df = self.query_date(date)
-        if cat not in self.cat_dict:
-            FinLogger.error(f"{cat} is not in category config")
+        def is_valid_data(row):
+            acc_name = row["ACCOUNT"]
+            ass_name = row["NAME"]
+            return self.has_asset(acc_name, ass_name)
         
         def assign_cat(row):
             acc_name = row["ACCOUNT"]
@@ -273,7 +284,21 @@ class FinContext:
             asset:AssetItem = self.get_asset(acc_name, ass_name)
             return asset.cats.get(cat)
 
+        # get the latest data
+        date = self.get_latest_date() if date is None else date
+        df = self.query_date(date)
+        if cat not in self.cat_dict:
+            FinLogger.error(f"{cat} is not in category config")
+
+        # remove invalid data
+        print(df)
+        df = df[df.apply(is_valid_data, axis=1)]
+        print(df)
+
+        # assign categories
         df[cat] = df.apply(assign_cat, axis=1)
+
+        # generate chart
         df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
         fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
         return fig

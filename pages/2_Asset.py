@@ -33,7 +33,7 @@ def add_asset_record_dia(acc_name, asset_name):
         print(last_row)
         last_date = last_row["DATE"]
         last_net = last_row["NET_WORTH"]
-        last_invest = last_row["MONTH_INVESTIGATION"]
+        last_invest = last_row["MONTH_INVESTMENT"]
         last_profit = last_row["MONTH_PROFIT"]
         st.write(f"The previous record: \nDATE: {last_date}, NET_WORTH: {last_net}, INVEST: {last_invest}, PROFIT: {last_profit}")
     else:
