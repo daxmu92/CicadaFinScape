@@ -20,3 +20,12 @@ def add_asset():
 
     if st.button("Submit", on_click=FinContext.add_asset, args=(context, acc_name, asset_name, cats), type="primary", key="acc_new_acc_submit"):
         st.rerun()
+
+
+def editable_accounts(df=None, key=0):
+    context: FinContext = st.session_state['context']
+    col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
+    if df is None:
+        df = context.account_df()
+    col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in df.columns if col not in context.cat_dict})
+    return st.data_editor(df, hide_index=True, column_config=col_config, key=key)

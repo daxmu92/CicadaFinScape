@@ -155,6 +155,28 @@ class FinContext:
                     asset.add_cat(k, v)
         self.write_config()
 
+    def add_account_from_df(self, df: pd.DataFrame):
+        if df is None:
+            return
+        for index, row in df.iterrows():
+            print(row)
+            acc_name = row["ACCOUNT"]
+            asset_name = row["NAME"]
+            if acc_name not in self.acc:
+                self.acc[acc_name] = Account(acc_name)
+            acc = self.acc[acc_name]
+
+            asset = acc.asset(asset_name)
+            assert (asset is None)
+
+            asset = AssetItem(asset_name, acc)
+            acc.add_asset(asset)
+
+            for k, v in row.items():
+                if k in self.cat_dict:
+                    asset.add_cat(k, v)
+        self.write_config()
+
     def category_df(self):
         cat = [[k, ','.join(v)] for k, v in self.cat_dict.items()]
         cat_df = pd.DataFrame(cat, columns=["Category", "Labels"])
@@ -232,6 +254,13 @@ class FinContext:
             print(row.to_list())
             self.insert_asset(*row.to_list())
 
+    def get_all_data_csv(self):
+        cols = ASSET_TABLE.cols_name()
+        with self.fsql as s:
+            r = s.query_all_asset()
+            df = pd.DataFrame(r, columns=cols)
+        return df.to_csv(index=False).encode("utf-8")
+
     def asset_table(self):
         #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
         cols = ASSET_TABLE.cols_name()
@@ -242,6 +271,7 @@ class FinContext:
         df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
         df = df[["DATE", "ASSET", "NET_WORTH"]]
         return df
+
 
     def overview_chart(self):
         df = self.asset_table()
