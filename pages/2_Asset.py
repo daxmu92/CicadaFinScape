@@ -7,6 +7,7 @@ sys.path.append("..")
 from context import FinContext
 from st_utils import FinWidgets
 import fwidgets as fw
+import finutils as fu
 
 context: FinContext = st.session_state['context']
 
@@ -30,8 +31,9 @@ def delete_asset_dia(acc_name, ass_name):
 @st.experimental_dialog("ADD ASSET RECORD")
 def add_asset_record_dia(acc_name, asset_name):
     context: FinContext = st.session_state["context"]
-    date = st.date_input("Date", key="add_asset_dia_date")
-    period_str = pd.Period(date, freq="M").strftime("%Y-%m")
+    year = fw.year_selector(key="add_asset_dia_year")
+    month = fw.month_radio(key="add_asset_dia_month")
+    period_str = pd.Period(year=year, month=month, freq="M").strftime("%Y-%m")
     last_row = context.query_last_data(acc_name, asset_name, period_str)
     if last_row is not None:
         print(last_row)
@@ -76,7 +78,7 @@ def add_asset_record_dia(acc_name, asset_name):
         profit = st.number_input("PERIOD_PROFIT", key="ass_add_ass_record_period_input2")
 
     if st.button("Submit", key="ass_add_ass_record_button", type="primary"):
-        context.insert_asset(date, acc_name, asset_name, net, invest, profit)
+        context.insert_asset(period_str, acc_name, asset_name, net, invest, profit)
         st.rerun()
 
 

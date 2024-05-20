@@ -4,6 +4,7 @@ import copy
 import csv
 import pandas as pd
 from st_utils import FinLogger
+import finutils as fu
 
 
 class SQLColDef:
@@ -148,6 +149,11 @@ class FinSQL:
         print(exec_str)
         return self.db.execute(exec_str)
 
+    def exec_value(self, exec_str, values):
+        print(exec_str)
+        print(', '.join([str(x) for x in values]))
+        return self.db.execute(exec_str, values)
+
     def clear_db(self):
         tables = self._get_tables()
         for table in tables:
@@ -180,7 +186,9 @@ class FinSQL:
             k = c.name
             assert k in data, f"{k} is not in {data}"
             insert_keys.append(k)
-            if c.type == "TEXT":
+            if c.name == "DATE":
+                insert_values.append(f"'{fu.norm_date(data[k])}'")
+            elif c.type == "TEXT":
                 insert_values.append(f"'{data[k]}'")
             else:
                 insert_values.append(str(data[k]))
@@ -217,6 +225,70 @@ class FinSQL:
     def query_date(self, date):
         results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}"''').fetchall()
         return results
+
+    def query_data_exist(self, date, acc_name, name):
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc_name}" and NAME = "{name}"''').fetchall()
+        return len(results) > 0
+
+    def update_data(self, filter: dict, data: dict):
+        where_str = "WHERE "
+        where_value = []
+        i = 0
+        for k, v in filter.items():
+            if i != 0:
+                where_str += " AND "
+            where_str += f"{k} = ?"
+            where_value.append(v)
+
+        set_str = "SET "
+        set_value = []
+        i = 0
+        for k, v in data.items():
+            if i != 0:
+                set_str += ", "
+            set_str += f"{k} = ?"
+            set_value.append(v)
+
+        cmd_str = f'''UPDATE {ASSET_TABLE.name()} {set_str} {where_str}'''
+        values = tuple(set_value + where_value)
+        self.exec_value(cmd_str, values)
+
+    def delete_data(self, filter: dict):
+        where_str = "WHERE "
+        where_value = []
+        i = 0
+        for k, v in filter.items():
+            if i != 0:
+                where_str += " AND "
+            where_str += f"{k} = ?"
+            where_value.append(v)
+        cmd_str = f'''DELETE from {ASSET_TABLE.name()} {where_str}'''
+        values = tuple(where_value)
+        self.exec_value(cmd_str, values)
+
+    def modify_data(self, date, acc_name, name, data: dict):
+        insert_keys = []
+        insert_values = []
+        index_cols = ["DATE", "ACCOUNT", "NAMNE"]
+        update_cols = [x for x in ASSET_TABLE.ess_cols() if x.name not in index_cols]
+
+        for c in update_cols:
+            k = c.name
+            assert k in data, f"{k} is not in {data}"
+            insert_keys.append(k)
+            if c.type == "TEXT":
+                insert_values.append(f"'{data[k]}'")
+            else:
+                insert_values.append(str(data[k]))
+
+        for k in ASSET_TABLE.ex_cols():
+            if k in data:
+                insert_keys.append(data[k])
+
+        key_str = ', '.join(insert_keys)
+        value_str = ', '.join(insert_values)
+        execute_str = f"UPDATE {ASSET_TABLE.name()} ({key_str}) VALUES ({value_str});"
+        self.exec(execute_str)
 
     def delete_asset(self, acc_name, name):
         self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')

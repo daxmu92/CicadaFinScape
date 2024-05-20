@@ -2,10 +2,12 @@ import sys
 import streamlit as st
 import pandas as pd
 import re
+import json
 
 sys.path.append("..")
 from context import FinContext
 import fwidgets as fw
+import finutils as fu
 
 context: FinContext = st.session_state['context']
 
@@ -30,13 +32,35 @@ def k_init_all():
         if key not in st.session_state:
             st.session_state[key] = f"{key}_0"
 
-
 k_init_all()
 
 st.set_page_config(page_title="Account Management",)
 st.sidebar.header("Account Management")
 st.header("Account Management")
 st.subheader("Account Categories")
+
+
+@st.experimental_dialog("Load Accounts config from json file")
+def load_acc_config_from_json_dia():
+    upload_file = st.file_uploader("Choose a json file")
+    if upload_file is not None:
+        config = json.load(upload_file)
+        if st.button("Submit", key="load_config_from_json_submit", type="primary"):
+            context.load_config(config)
+            context.write_config()
+            st.rerun()
+        st.json(config, expanded=True)
+    else:
+        st.warning("You need to upload a config json file")
+
+
+with st.sidebar:
+    st.download_button("Download your accounts config",
+                       data=context.config_json(),
+                       file_name=f"cfs-accounts-config-{fu.cur_date()}.json",
+                       mime="application/json")
+    if st.button("Upload your accounts config", key="side_bar_upload_config_buttong"):
+        load_acc_config_from_json_dia()
 
 # category
 cat_df = context.category_df()
