@@ -81,23 +81,21 @@ def add_asset_record_dia(acc_name, asset_name):
         context.insert_asset(period_str, acc_name, asset_name, net, invest, profit)
         st.rerun()
 
-
 acc_name_list = [v.name for k, v in context.acc.items()]
-acc_name = st.selectbox("Account", acc_name_list)
-acc = context.acc[acc_name]
-
-assets_name = [x.name for x in acc.asset_list]
-
-if not assets_name:
-    st.write(f"### You don't have any asset under account {acc_name}.")
-    if st.button("Add asset", type="primary", key="ass_add_asset"):
-        fw.add_asset()
-    st.stop()
-
-tabs = st.tabs(assets_name)
+tabs = st.tabs(acc_name_list)
 for index, tab in enumerate(tabs):
     with tab:
-        asset_name = assets_name[index]
+        acc_name = acc_name_list[index]
+        acc = context.acc[acc_name]
+        assets_name = [x.name for x in acc.asset_list]
+
+        if not assets_name:
+            st.write(f"### You don't have any asset under account {acc_name}.")
+            if st.button("Add asset", type="primary", key="ass_add_asset"):
+                fw.add_asset()
+            st.stop()
+
+        asset_name = st.radio("Choose your asset", assets_name, key=f"Choose-asset-{acc}-{index}")
         acc_ass = f"{acc_name}-{asset_name}"
         asset_df = context.asset_df(acc_name, asset_name)
         print(asset_df)
