@@ -27,9 +27,9 @@ class FinContext:
             return s.validate_db()
 
     def clear_config(self):
-        self.config.clear()
-        self.cat_dict.clear()
-        self.acc.clear()
+        self.config = {}
+        self.cat_dict = {}
+        self.acc = {}
 
     def load_config(self, config: dict):
         self.clear_config()
@@ -69,7 +69,7 @@ class FinContext:
             self.load_config(config)
             self.write_config()
 
-    def write_config(self):
+    def config_dict(self):
         config = {}
         if self.cat_dict:
             config["Categories"] = self.cat_dict
@@ -83,7 +83,13 @@ class FinContext:
                 assets.append(asset.to_json())
         if assets:
             config["Assets"] = assets
+        return config
 
+    def config_json(self):
+        return json.dumps(self.config_dict(), indent=4)
+
+    def write_config(self):
+        config = self.config_dict()
         with open(self.config_path, 'w') as f:
             json.dump(config, f, indent=4)
 
@@ -211,6 +217,9 @@ class FinContext:
             r = f.query_asset(acc_name, ass_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
 
+        print("1111111111111111111")
+        print(date)
+        print(df)
         closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
         return closest_row
 
@@ -234,6 +243,19 @@ class FinContext:
         insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
         with self.fsql as s:
             s.insert_asset(insert_data)
+            s.commit()
+
+    def delete_data(self, date, acc_name, ass_name):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
+        with self.fsql as s:
+            s.delete_data(filter)
+            s.commit()
+
+    def update_data(self, date, acc_name, ass_name, networth, invest, profit):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
+        update_data = {"NET_WORTH": networth, "MONTH_INVESTMENT": invest, "MONTH_PROFIT": profit}
+        with self.fsql as s:
+            s.update_data(filter, update_data)
             s.commit()
 
     def delete_asset(self, acc_name, asset_name):

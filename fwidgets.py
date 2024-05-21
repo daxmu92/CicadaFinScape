@@ -1,5 +1,6 @@
 import streamlit as st
 from context import FinContext
+import finutils as fu
 
 
 @st.experimental_dialog("New asset")
@@ -29,3 +30,19 @@ def editable_accounts(df=None, key=0):
         df = context.account_df()
     col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in df.columns if col not in context.cat_dict})
     return st.data_editor(df, hide_index=True, column_config=col_config, key=key)
+
+
+def year_selector(key=0):
+    year_list = list(range(2000, 2100))
+    cur_year = fu.cur_year()
+    index = 0
+    if cur_year in year_list:
+        index = cur_year - year_list[0]
+    return st.selectbox("Year", year_list, index=index, key=key)
+
+
+def month_radio(key=0):
+    month_list = list(range(1, 13))
+    cur_month = fu.cur_month()
+    index = cur_month - month_list[0]
+    return st.radio("Month", month_list, index=index, key=key, horizontal=True)

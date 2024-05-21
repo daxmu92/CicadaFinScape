@@ -1,11 +1,11 @@
 import os
 import pandas as pd
-from datetime import datetime
 import streamlit as st
 
 import finsql as finsql
 from context import FinContext
 import fwidgets as fw
+import finutils as fu
 
 st.set_page_config(page_title="Cicada Financial Scape", page_icon="👋")
 
@@ -28,11 +28,6 @@ context = FinContext(config_path, db_path)
 st.session_state['context'] = context
 
 
-def get_cur_time():
-    current_time = datetime.now()
-    timestamp_string = current_time.strftime("%Y-%m-%d")
-    return timestamp_string
-
 @st.experimental_dialog("Your database is not valid")
 def init_db():
     st.write("# Initialize your database? All of the data in database will be reset and can not recover")
@@ -53,6 +48,17 @@ def reset_sample_data_dia():
     if st.button("Confirm", key="side_bar_reset_dia_confirm"):
         context: FinContext = st.session_state['context']
         context.initialize_with_sample_data()
+        st.rerun()
+
+
+@st.experimental_dialog("CLEAR DATA")
+def clear_data_dia():
+    st.write("# WARNING: All of your data will be clear and can not recover")
+    if st.button("Confirm", key="side_bar_clear_dia_confirm"):
+        context: FinContext = st.session_state['context']
+        context.clear_config()
+        context.write_config()
+        context.init_db()
         st.rerun()
 
 
@@ -103,7 +109,9 @@ with st.sidebar:
         reset_sample_data_dia()
     if st.button("Load from csv", key="side_bar_load_from_csv"):
         load_from_csv_dia()
-    st.download_button(label="Download your data", data=context.get_all_data_csv(), file_name=f"cfs-data-{get_cur_time()}.csv", mime="text/csv")
+    st.download_button(label="Download your data", data=context.get_all_data_csv(), file_name=f"cfs-data-{fu.cur_date()}.txt", mime="text/csv")
+    if st.button("Clear Data"):
+        clear_data_dia()
 
 overview_chart = context.overview_chart()
 st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
