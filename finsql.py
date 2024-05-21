@@ -239,6 +239,7 @@ class FinSQL:
                 where_str += " AND "
             where_str += f"{k} = ?"
             where_value.append(v)
+            i = i + 1
 
         set_str = "SET "
         set_value = []
@@ -248,6 +249,7 @@ class FinSQL:
                 set_str += ", "
             set_str += f"{k} = ?"
             set_value.append(v)
+            i += 1
 
         cmd_str = f'''UPDATE {ASSET_TABLE.name()} {set_str} {where_str}'''
         values = tuple(set_value + where_value)
@@ -262,6 +264,7 @@ class FinSQL:
                 where_str += " AND "
             where_str += f"{k} = ?"
             where_value.append(v)
+            i = i + 1
         cmd_str = f'''DELETE from {ASSET_TABLE.name()} {where_str}'''
         values = tuple(where_value)
         self.exec_value(cmd_str, values)

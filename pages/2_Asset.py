@@ -28,6 +28,25 @@ def delete_asset_dia(acc_name, ass_name):
         st.rerun()
 
 
+@st.experimental_dialog("DELETE SELECTED DATA")
+def delete_selected_data_dia(acc_name, ass_name, date_list: list):
+    st.write(f"## WARNING!")
+    st.write(f"**You are DELETING your data under asset {ass_name}, this will remove your data in database**")
+    date_list_str = ", ".join(date_list)
+    st.write(f"Date will be removed: {date_list_str}")
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("DELETE", key="delete_dialog_delete"):
+            for date in date_list:
+                context.delete_data(date, acc_name, ass_name)
+            st.rerun()
+
+    with col2:
+        if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
+            st.rerun()
+
+
 @st.experimental_dialog("ADD ASSET RECORD")
 def add_asset_record_dia(acc_name, asset_name):
     context: FinContext = st.session_state["context"]
@@ -99,9 +118,22 @@ for index, tab in enumerate(tabs):
         acc_ass = f"{acc_name}-{asset_name}"
         asset_df = context.asset_df(acc_name, asset_name)
         print(asset_df)
-        df = st.data_editor(asset_df, hide_index=True, key=acc_ass + "-df")
-        if st.button("Add record", key=f"{acc_ass}-add"):
-            add_asset_record_dia(acc_name, asset_name)
 
-        if st.button("DELETE ASSET", key=acc_ass + "-delete"):
-            delete_asset_dia(acc_name, asset_name)
+        col_configs = {k: st.column_config.TextColumn(k, disabled=True) for k in asset_df.columns}
+        asset_df["Select"] = False
+        check_col_config = st.column_config.CheckboxColumn("Select", default=False)
+        col_configs["Select"] = check_col_config
+
+        df = st.data_editor(asset_df, hide_index=True, key=acc_ass + "-df", use_container_width=True, column_config=col_configs)
+        date_list = df.loc[df["Select"]]["DATE"]
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("Add record", key=f"{acc_ass}-add"):
+                add_asset_record_dia(acc_name, asset_name)
+        with col2:
+            if st.button("Delete Selected", key=f"asset-{acc_ass}-delete"):
+                delete_selected_data_dia(acc_name, asset_name, date_list)
+
+        # if st.button("DELETE ASSET", key=acc_ass + "-delete"):
+        #     delete_asset_dia(acc_name, asset_name)

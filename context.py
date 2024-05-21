@@ -248,7 +248,7 @@ class FinContext:
     def delete_data(self, date, acc_name, ass_name):
         filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
         with self.fsql as s:
-            s.delete_data(date, acc_name, ass_name)
+            s.delete_data(filter)
             s.commit()
 
     def update_data(self, date, acc_name, ass_name, networth, invest, profit):

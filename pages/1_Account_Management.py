@@ -67,7 +67,12 @@ cat_df = context.category_df()
 
 # TODO - use list editor
 col_config = {col: st.column_config.TextColumn(col, required=True) for col in cat_df.columns}
-df = st.data_editor(cat_df, hide_index=True, num_rows="dynamic", column_config=col_config, key=st.session_state['acc_cat_df_key'])
+df = st.data_editor(cat_df,
+                    hide_index=True,
+                    num_rows="dynamic",
+                    column_config=col_config,
+                    key=st.session_state['acc_cat_df_key'],
+                    use_container_width=True)
 col1, col2 = st.columns([2, 11])
 with col1:
     st.button("Submit", on_click=FinContext.category_from_df, args=(context, df), type="primary", key="acc_cat_df_submit")
@@ -87,5 +92,5 @@ else:
     col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
     account_df = context.account_df()
     col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in account_df.columns if col not in context.cat_dict})
-    df = st.data_editor(account_df, hide_index=True, column_config=col_config)
+    df = st.data_editor(account_df, hide_index=True, column_config=col_config, use_container_width=True)
     st.button("Submit", on_click=FinContext.account_from_df, args=(context, df), type="primary", key="acc_acc_df_submit")
