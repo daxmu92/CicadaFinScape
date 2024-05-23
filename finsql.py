@@ -203,6 +203,20 @@ class FinSQL:
     def commit(self):
         self.db.commit()
 
+    def cmd_filter_period(start_date, end_date):
+        date_str = f'''DATE BETWEEN "{start_date}" AND "{end_date}"'''
+        return date_str
+
+    def cmd_filter_cols(cols, len_of_values):
+        cols_str = ', '.join(cols)
+        marks = ', '.join(['?'] * len(cols))
+        placeholder = ', '.join([f"({marks})"] * len_of_values)
+        cmd = f"({cols_str}) IN ({placeholder})"
+        return cmd
+
+    def cmd_filter_acc_ass(len_of_values):
+        return FinSQL.cmd_filter_cols(["ACCOUNT", "NAME"], len_of_values)
+
     def load_from_csv(self, csv_path):
         with open(csv_path, 'r') as f:
             reader = csv.reader(f)
@@ -220,6 +234,22 @@ class FinSQL:
 
     def query_all_asset(self):
         results = self.exec(f"SELECT * from {ASSET_TABLE.name()}").fetchall()
+        return results
+
+    def query_period(self, start_date, end_date, acc_ass_l: list[tuple], cols=ASSET_TABLE.cols_name()):
+        col_str = ", ".join(cols)
+        date_str = f'''DATE BETWEEN "{start_date}" AND "{end_date}"'''
+        filter_acc_ass_str = FinSQL.cmd_filter_acc_ass(len(acc_ass_l))
+        where_str = f'''WHERE {date_str} AND {filter_acc_ass_str}'''
+        values = acc_ass_l
+        results = self.exec_value(f'''SELECT {col_str} from {ASSET_TABLE.name()} {where_str}''', values).fetchall()
+        return results
+
+    def query_period_all(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
+        col_str = ", ".join(cols)
+        date_str = FinSQL.cmd_filter_period(start_date, end_date)
+        where_str = f'''WHERE {date_str}'''
+        results = self.exec(f'''SELECT {col_str} from {ASSET_TABLE.name()} {where_str}''').fetchall()
         return results
 
     def query_date(self, date):

@@ -223,12 +223,44 @@ class FinContext:
         closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
         return closest_row
 
-    def get_latest_date(self):
+    def query_period_data(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
+        with self.fsql as s:
+            r = s.query_period_all(start_date, end_date)
+            df = pd.DataFrame(r, columns=cols)
+        return df
+
+    def query_period_data_by_acc_ass_list(self, start_date, end_date, acc_ass_list: list[tuple], cols=ASSET_TABLE.cols_name()):
+        with self.fsql as s:
+            r = s.query_period(start_date, end_date, acc_ass_list)
+            df = pd.DataFrame(r, columns=cols)
+        return df
+
+    # def query_period_data_by_cat(self, start_date, end_date, category, cols = ASSET_TABLE.cols_name()):
+    # with self.fsql as s:
+    # r = s.query_all_asset()
+    # df = pd.DataFrame(r, columns=cols)
+
+
+#
+# df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
+# df = df[["DATE", "ASSET", "NET_WORTH"]]
+# return df
+
+    def get_date_range(self):
         with self.fsql as f:
             r = f.query_col(["DATE"])
             df = pd.DataFrame(r, columns=["DATE"])
+        earliest = df["DATE"].min()
         latest = df["DATE"].max()
-        return latest
+        return earliest, latest
+
+    def get_latest_date(self):
+        e, l = self.get_date_range()
+        return l
+
+    def get_earliest_date(self):
+        e, l = self.get_date_range()
+        return e
 
     def get_asset(self, acc_name, asset_name):
         if acc_name not in self.acc:
@@ -294,7 +326,6 @@ class FinContext:
         df = df[["DATE", "ASSET", "NET_WORTH"]]
         return df
 
-
     def overview_chart(self):
         df = self.asset_table()
         df_sum = df.copy()
@@ -350,6 +381,16 @@ class FinContext:
         # generate chart
         df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
         fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+        return fig
+
+    def profit_waterfall(self, start_date, end_date):
+        df = self.query_period_data(start_date, end_date)
+        df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
+
+        fig = go.Figure(go.Waterfall(
+            x=df_sum["DATE"],
+            y=df_sum["MONTH_PROFIT"],
+        ))
         return fig
 
     def initialize_with_sample_data(self):
