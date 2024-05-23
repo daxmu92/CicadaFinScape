@@ -23,3 +23,8 @@ def cur_month():
 def norm_date(date):
     p = pd.Period(date, freq='M')
     return p.strftime("%Y-%m")
+
+
+def date_list(start_date, end_date):
+    period_range = pd.period_range(start=start_date, end=end_date, freq='M')
+    return [p.strftime("%Y-%m") for p in period_range]

@@ -14,6 +14,9 @@ st.set_page_config(page_title="Profit and Loss")
 st.sidebar.header("Profit and Loss")
 st.header("Profit and Loss")
 
-e, l = context.get_date_range()
-profit_waterfall = context.profit_waterfall(e, l)
+s, e = context.get_date_range()
+date_list = fu.date_list(s, e)
+start_date, end_date = st.select_slider("Select a period", options=date_list, value=(s, e))
+
+profit_waterfall = context.profit_waterfall(start_date, end_date)
 st.plotly_chart(profit_waterfall, theme="streamlit", use_container_width=True)

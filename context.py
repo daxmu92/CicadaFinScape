@@ -387,11 +387,65 @@ class FinContext:
         df = self.query_period_data(start_date, end_date)
         df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
 
+        layout = {
+            "xaxis": {
+                "rangeselector": {
+                    "buttons": [
+                        {
+                            "count": 1,
+                            "label": "1m",
+                            "step": "month",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "count": 6,
+                            "label": "6m",
+                            "step": "month",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "count": 1,
+                            "label": "YTD",
+                            "step": "year",
+                            "stepmode": "todate",
+                        },
+                        {
+                            "count": 1,
+                            "label": "1y",
+                            "step": "year",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "count": 3,
+                            "label": "3y",
+                            "step": "year",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "step": "all"
+                        },
+                    ]
+                },
+                "rangeslider": {
+                    "visible": True
+                }
+            },
+            "yaxis": {
+                "fixedrange": False,
+                "autorange": True,
+            },
+        }
         fig = go.Figure(go.Waterfall(
             x=df_sum["DATE"],
             y=df_sum["MONTH_PROFIT"],
-        ))
+        ), layout=layout)
         return fig
+
+    def profit_calendar(self):
+        # TODO https://calendar-component.streamlit.app/
+        pass
+        #df = self.query_period_data(start_date, end_date)
+        #df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
 
     def initialize_with_sample_data(self):
 
