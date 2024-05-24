@@ -54,11 +54,11 @@ class SQLTableDef:
 
 COL_DATE = SQLColDef("DATE", "TEXT", "NOT NULL")
 COL_ACCOUNT = SQLColDef("ACCOUNT", "TEXT", "NOT NULL")
-COL_NAME = SQLColDef("NAME", "TEXT", "NOT NULL")
+COL_NAME = SQLColDef("SUBACCOUNT", "TEXT", "NOT NULL")
 COL_NET_WORTH = SQLColDef("NET_WORTH", "REAL", "NOT NULL")
 COL_INFLOW = SQLColDef("INFLOW", "REAL", "NOT NULL")
 COL_PROFIT = SQLColDef("PROFIT", "REAL", "NOT NULL")
-ASSET_TABLE = SQLTableDef("ASSET", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_INFLOW, COL_PROFIT])
+ASSET_TABLE = SQLTableDef("SUBACCOUNT", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_INFLOW, COL_PROFIT])
 
 
 class AssetItem:
@@ -215,7 +215,7 @@ class FinSQL:
         return cmd
 
     def cmd_filter_acc_ass(len_of_values):
-        return FinSQL.cmd_filter_cols(["ACCOUNT", "NAME"], len_of_values)
+        return FinSQL.cmd_filter_cols(["ACCOUNT", "SUBACCOUNT"], len_of_values)
 
     def load_from_csv(self, csv_path):
         with open(csv_path, 'r') as f:
@@ -229,7 +229,7 @@ class FinSQL:
         self.db.commit()
 
     def query_asset(self, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         return results
 
     def query_all_asset(self):
@@ -257,7 +257,7 @@ class FinSQL:
         return results
 
     def query_data_exist(self, date, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc_name}" and NAME = "{name}"''').fetchall()
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''').fetchall()
         return len(results) > 0
 
     def update_data(self, filter: dict, data: dict):
@@ -324,7 +324,7 @@ class FinSQL:
         self.exec(execute_str)
 
     def delete_asset(self, acc_name, name):
-        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')
+        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         self.db.commit()
 
     def query_col(self, cols):

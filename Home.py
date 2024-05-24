@@ -74,9 +74,9 @@ def load_from_csv_dia():
             new_ass: set[tuple] = set()
             for index, row in data_df.iterrows():
                 acc_name = row["ACCOUNT"]
-                ass_name = row["NAME"]
-                if not context.has_asset(acc_name, ass_name):
-                    new_ass.add((acc_name, ass_name))
+                sub_name = row["SUBACCOUNT"]
+                if not context.has_asset(acc_name, sub_name):
+                    new_ass.add((acc_name, sub_name))
 
             acc_data = []
             for i in new_ass:
@@ -84,7 +84,7 @@ def load_from_csv_dia():
                 d.extend([None] * len(context.cat_dict))
                 acc_data.append(d)
 
-            cols = ["ACCOUNT", "NAME"]
+            cols = ["ACCOUNT", "SUBACCOUNT"]
             cols.extend([k for k in context.cat_dict])
 
             acc_df = pd.DataFrame(columns=cols, data=acc_data)

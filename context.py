@@ -123,16 +123,16 @@ class FinContext:
         self.load_from_csv(csv_path)
 
     def combine_acc_ass(df):
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         return df
 
     def asset_df(self, acc_name, asset_name):
-        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "INFLOW", "PROFIT"]
+        cols = ["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]
         with self.fsql as s:
             r = s.query_asset(acc_name, asset_name)
             df = pd.DataFrame(r, columns=cols)
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH", "INFLOW", "PROFIT"]]
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+        df = df[["DATE", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]]
         return df
 
     def account_df(self):
@@ -167,7 +167,7 @@ class FinContext:
         for index, row in df.iterrows():
             print(row)
             acc_name = row["ACCOUNT"]
-            asset_name = row["NAME"]
+            asset_name = row["SUBACCOUNT"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
@@ -204,17 +204,17 @@ class FinContext:
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         return df
 
-    def query_latest_data(self, acc_name, ass_name):
+    def query_latest_data(self, acc_name, sub_name):
         with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
+            r = f.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         row_id = df["DATE"].idxmax()
         row = df.iloc[row_id]
         return row
 
-    def query_last_data(self, acc_name, ass_name, date):
+    def query_last_data(self, acc_name, sub_name, date):
         with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
+            r = f.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
 
         print("1111111111111111111")
@@ -242,8 +242,8 @@ class FinContext:
 
 
 #
-# df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-# df = df[["DATE", "ASSET", "NET_WORTH"]]
+# df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+# df = df[["DATE", "SUBACCOUNT", "NET_WORTH"]]
 # return df
 
     def get_date_range(self):
@@ -271,20 +271,20 @@ class FinContext:
     def has_asset(self, acc_name, asset_name):
         return self.get_asset(acc_name, asset_name) is not None
 
-    def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
-        insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
+    def insert_asset(self, date, acc_name, sub_name, networth, invest, profit):
+        insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, sub_name, networth, invest, profit])}
         with self.fsql as s:
             s.insert_asset(insert_data)
             s.commit()
 
-    def delete_data(self, date, acc_name, ass_name):
-        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
+    def delete_data(self, date, acc_name, sub_name):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "SUBACCOUNT": sub_name}
         with self.fsql as s:
             s.delete_data(filter)
             s.commit()
 
-    def update_data(self, date, acc_name, ass_name, networth, invest, profit):
-        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
+    def update_data(self, date, acc_name, sub_name, networth, invest, profit):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "SUBACCOUNT": sub_name}
         update_data = {"NET_WORTH": networth, "INFLOW": invest, "PROFIT": profit}
         with self.fsql as s:
             s.update_data(filter, update_data)
@@ -316,14 +316,14 @@ class FinContext:
         return df.to_csv(index=False).encode("utf-8")
 
     def asset_table(self):
-        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "INFLOW", "PROFIT"]
+        #cols = ["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]
         cols = ASSET_TABLE.cols_name()
         with self.fsql as s:
             r = s.query_all_asset()
             df = pd.DataFrame(r, columns=cols)
 
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH"]]
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+        df = df[["DATE", "SUBACCOUNT", "NET_WORTH"]]
         return df
 
     def overview_chart(self):
@@ -331,7 +331,7 @@ class FinContext:
         df_sum = df.copy()
         df_sum = df_sum.groupby("DATE")["NET_WORTH"].sum().reset_index()
         df_sum.rename(columns={"NET_WORTH": "TOTAL_NET_WORTH"}, inplace=True)
-        fig = px.line(df, x='DATE', y='NET_WORTH', color="ASSET")
+        fig = px.line(df, x='DATE', y='NET_WORTH', color="SUBACCOUNT")
         # TODO - add secondary y
         # fig = go.Figure(fig)
         # fig.add_trace(
@@ -348,20 +348,20 @@ class FinContext:
         date = self.get_latest_date() if date is None else date
         df = self.query_date(date)
         df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="ASSET", title=f"{date} Asset Allocation")
+        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Asset Allocation")
         return fig
 
     def category_pie(self, cat: str, date: str = None):
 
         def is_valid_data(row):
             acc_name = row["ACCOUNT"]
-            ass_name = row["NAME"]
-            return self.has_asset(acc_name, ass_name)
+            sub_name = row["SUBACCOUNT"]
+            return self.has_asset(acc_name, sub_name)
 
         def assign_cat(row):
             acc_name = row["ACCOUNT"]
-            ass_name = row["NAME"]
-            asset: AssetItem = self.get_asset(acc_name, ass_name)
+            sub_name = row["SUBACCOUNT"]
+            asset: AssetItem = self.get_asset(acc_name, sub_name)
             return asset.cats.get(cat)
 
         # get the latest data
