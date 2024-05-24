@@ -127,12 +127,12 @@ class FinContext:
         return df
 
     def asset_df(self, acc_name, asset_name):
-        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
+        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "INFLOW", "PROFIT"]
         with self.fsql as s:
             r = s.query_asset(acc_name, asset_name)
             df = pd.DataFrame(r, columns=cols)
         df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]]
+        df = df[["DATE", "ASSET", "NET_WORTH", "INFLOW", "PROFIT"]]
         return df
 
     def account_df(self):
@@ -285,7 +285,7 @@ class FinContext:
 
     def update_data(self, date, acc_name, ass_name, networth, invest, profit):
         filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
-        update_data = {"NET_WORTH": networth, "MONTH_INVESTMENT": invest, "MONTH_PROFIT": profit}
+        update_data = {"NET_WORTH": networth, "INFLOW": invest, "PROFIT": profit}
         with self.fsql as s:
             s.update_data(filter, update_data)
             s.commit()
@@ -316,7 +316,7 @@ class FinContext:
         return df.to_csv(index=False).encode("utf-8")
 
     def asset_table(self):
-        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
+        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "INFLOW", "PROFIT"]
         cols = ASSET_TABLE.cols_name()
         with self.fsql as s:
             r = s.query_all_asset()
@@ -385,7 +385,7 @@ class FinContext:
 
     def profit_waterfall(self, start_date, end_date):
         df = self.query_period_data(start_date, end_date)
-        df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
+        df_sum = df.groupby("DATE")["PROFIT"].sum().reset_index()
 
         layout = {
             "xaxis": {
@@ -437,7 +437,7 @@ class FinContext:
         }
         fig = go.Figure(go.Waterfall(
             x=df_sum["DATE"],
-            y=df_sum["MONTH_PROFIT"],
+            y=df_sum["PROFIT"],
         ), layout=layout)
         return fig
 
@@ -445,7 +445,7 @@ class FinContext:
         # TODO https://calendar-component.streamlit.app/
         pass
         #df = self.query_period_data(start_date, end_date)
-        #df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
+        #df_sum = df.groupby("DATE")["PROFIT"].sum().reset_index()
 
     def initialize_with_sample_data(self):
 

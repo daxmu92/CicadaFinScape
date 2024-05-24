@@ -58,9 +58,9 @@ def add_asset_record_dia(acc_name, asset_name):
         print(last_row)
         last_date = last_row["DATE"]
         last_net = last_row["NET_WORTH"]
-        last_invest = last_row["MONTH_INVESTMENT"]
-        last_profit = last_row["MONTH_PROFIT"]
-        st.write(f"The previous record: \nDATE: {last_date}, NET_WORTH: {last_net}, INVEST: {last_invest}, PROFIT: {last_profit}")
+        last_invest = last_row["INFLOW"]
+        last_profit = last_row["PROFIT"]
+        st.write(f"The previous record: \nDATE: {last_date}, NET_WORTH: {last_net}, INFLOW: {last_invest}, PROFIT: {last_profit}")
     else:
         last_net = 0
         last_invest = 0
@@ -83,7 +83,7 @@ def add_asset_record_dia(acc_name, asset_name):
             return
 
         net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("PERIOD_INVEST",
+        invest = st.number_input("PERIOD_INFLOW",
                                  key="ass_add_ass_record_period_input1",
                                  on_change=update,
                                  args=("ass_add_ass_record_period_input1",))
@@ -93,7 +93,7 @@ def add_asset_record_dia(acc_name, asset_name):
                                  args=("ass_add_ass_record_period_input2",))
     else:
         net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("PERIOD_INVEST", key="ass_add_ass_record_period_input1")
+        invest = st.number_input("PERIOD_INFLOW", key="ass_add_ass_record_period_input1")
         profit = st.number_input("PERIOD_PROFIT", key="ass_add_ass_record_period_input2")
 
     if st.button("Submit", key="ass_add_ass_record_button", type="primary"):
