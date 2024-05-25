@@ -25,6 +25,12 @@ def norm_date(date):
     return p.strftime("%Y-%m")
 
 
+def previous_date(date: str) -> str:
+    p = pd.Period(date, freq='M')
+    p = p - 1
+    return p.strftime("%Y-%m")
+
+
 def date_list(start_date, end_date):
     period_range = pd.period_range(start=start_date, end=end_date, freq='M')
     return [p.strftime("%Y-%m") for p in period_range]

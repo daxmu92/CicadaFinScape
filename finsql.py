@@ -95,7 +95,7 @@ class AssetItem:
     def add_to_df(self, df: pd.DataFrame):
         data = {
             "Account": self.acc.name,
-            "Name": self.name,
+            "Sub-account": self.name,
         }
         data.update(self.cats)
         data = [data[x] if x in data else None for x in df.columns]

@@ -41,8 +41,21 @@ with st.sidebar:
     if st.button("Clear Data"):
         fw.clear_data_dia()
 
+cur_date = fu.norm_date(fu.cur_date())
+total_worth = context.query_total_value(cur_date)
+previous_date = fu.previous_date(cur_date)
+previous_worth = context.query_total_value(previous_date)
+net_growth = total_worth - previous_worth
+
+col1, col2 = st.columns(2)
+with col1:
+    st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")
+
+with col2:
+    growth_color = ":green-background" if net_growth >= 0 else ":red-background"
+    st.write(f"### Net growth: {growth_color}[{net_growth:,.1f}]")
+
 overview_chart = context.overview_area_chart()
-st.write("#### Total worth: ")
 st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
 
 allocation_pie = context.allocation_pie()
