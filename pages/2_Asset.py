@@ -5,7 +5,6 @@ import re
 
 sys.path.append("..")
 from context import FinContext
-from st_utils import FinWidgets
 from finsql import ASSET_TABLE
 import fwidgets as fw
 import finutils as fu
@@ -15,38 +14,6 @@ context: FinContext = st.session_state['context']
 st.set_page_config(page_title="Account")
 st.sidebar.header("Account")
 st.header("Account")
-
-
-@st.experimental_dialog("DELETE SUBACCOUNT")
-def delete_asset_dia(acc_name, sub_name):
-    st.write(f"## WARNING!")
-    st.write(f"**You are DELETING your asset {sub_name} under {acc_name}, this will clear your data in database**")
-
-    if st.button("DELETE", key="delete_dialog_delete", on_click=FinContext.delete_asset, args=(st.session_state["context"], acc_name, sub_name)):
-        st.rerun()
-
-    if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
-        st.rerun()
-
-
-@st.experimental_dialog("DELETE SELECTED DATA")
-def delete_selected_data_dia(acc_name, sub_name, date_list: list):
-    st.write(f"## WARNING!")
-    st.write(f"**You are DELETING your data under asset {sub_name}, this will remove your data in database**")
-    date_list_str = ", ".join(date_list)
-    st.write(f"Date will be removed: {date_list_str}")
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if st.button("DELETE", key="delete_dialog_delete"):
-            for date in date_list:
-                context.delete_data(date, acc_name, sub_name)
-            st.rerun()
-
-    with col2:
-        if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
-            st.rerun()
-
 
 acc_name_list = [v.name for k, v in context.acc.items()]
 tabs = st.tabs(acc_name_list)
@@ -82,7 +49,7 @@ for index, tab in enumerate(tabs):
                 fw.insert_or_update_record_dia(acc_name, sub_name)
         with col2:
             if st.button("Delete Selected", key=f"asset-{account_and_sub}-delete"):
-                delete_selected_data_dia(acc_name, sub_name, date_list)
+                fw.delete_selected_data_dia(acc_name, sub_name, date_list)
 
         # if st.button("DELETE SUBACCOUNT", key=account_and_sub + "-delete"):
         #     delete_asset_dia(acc_name, sub_name)
