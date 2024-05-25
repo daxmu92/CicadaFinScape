@@ -12,8 +12,8 @@ import finutils as fu
 context: FinContext = st.session_state['context']
 
 st.set_page_config(page_title="Account")
-st.sidebar.header("Account")
-st.header("Account")
+st.title("Account")
+st.divider()
 
 acc_name_list = context.acc_name_list()
 tabs = st.tabs(acc_name_list)

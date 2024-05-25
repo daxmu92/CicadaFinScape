@@ -10,8 +10,8 @@ import finutils as fu
 context: FinContext = st.session_state['context']
 
 st.set_page_config(page_title="Profit and Loss")
-st.sidebar.header("Profit and Loss")
-st.header("Profit and Loss")
+st.title("Profit and Loss")
+st.divider()
 
 s, e = context.get_date_range()
 date_list = fu.date_list(s, e)

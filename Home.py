@@ -8,7 +8,6 @@ import fwidgets as fw
 import finutils as fu
 
 st.set_page_config(page_title="Cicada Financial Scape", page_icon="👋")
-st.sidebar.header("Home")
 with st.sidebar:
     if st.button("Reset to Sample data", key="side_bar_reset_button"):
         fw.reset_sample_data_dia()

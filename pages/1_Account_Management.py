@@ -35,8 +35,8 @@ def k_init_all():
 k_init_all()
 
 st.set_page_config(page_title="Account Management",)
-st.sidebar.header("Account Management")
-st.header("Account Management")
+st.title("Account Management")
+st.divider()
 st.subheader("Account Categories")
 
 
