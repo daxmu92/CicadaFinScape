@@ -95,15 +95,15 @@ class FinContext:
 
     def clean_up_cat(self):
         for k, v in self.acc.items():
-            for ass in v.asset_list:
-                ass.cats = {k: v for k, v in ass.cats.items() if k in self.cat_dict}
+            for sub in v.asset_list:
+                sub.cats = {k: v for k, v in sub.cats.items() if k in self.cat_dict}
 
-    def add_asset(self, acc_name, asset_name, cats: dict):
+    def add_asset(self, acc_name, sub_name, cats: dict):
         if acc_name not in self.acc:
             self.acc[acc_name] = Account(acc_name)
 
         acc = self.acc[acc_name]
-        asset = AssetItem(asset_name, acc)
+        asset = AssetItem(sub_name, acc)
         for k, v in cats.items():
             asset.add_cat(k, v)
         acc.add_asset(asset)
@@ -126,10 +126,10 @@ class FinContext:
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         return df
 
-    def asset_df(self, acc_name, asset_name):
+    def asset_df(self, acc_name, sub_name) -> pd.DataFrame:
         cols = ["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]
         with self.fsql as s:
-            r = s.query_asset(acc_name, asset_name)
+            r = s.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=cols)
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         df = df[["DATE", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]]
@@ -146,14 +146,14 @@ class FinContext:
     def account_from_df(self, df: pd.DataFrame):
         for index, row in df.iterrows():
             acc_name = row["Account"]
-            asset_name = row["Name"]
+            sub_name = row["Name"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
 
-            asset = acc.asset(asset_name)
+            asset = acc.asset(sub_name)
             if asset is None:
-                asset = AssetItem(asset_name, acc)
+                asset = AssetItem(sub_name, acc)
                 acc.add_asset(asset)
 
             for k, v in row.items():
@@ -167,15 +167,15 @@ class FinContext:
         for index, row in df.iterrows():
             print(row)
             acc_name = row["ACCOUNT"]
-            asset_name = row["SUBACCOUNT"]
+            sub_name = row["SUBACCOUNT"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
 
-            asset = acc.asset(asset_name)
+            asset = acc.asset(sub_name)
             assert (asset is None)
 
-            asset = AssetItem(asset_name, acc)
+            asset = AssetItem(sub_name, acc)
             acc.add_asset(asset)
 
             for k, v in row.items():
@@ -204,23 +204,29 @@ class FinContext:
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         return df
 
+    def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist):
+        if use_pre_if_not_exist:
+            return self.query_last_data(date, acc, sub)
+
+        with self.fsql as s:
+            r = s.query_subacc_by_date(date, acc, sub)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+        return df
+
     def query_latest_data(self, acc_name, sub_name):
         with self.fsql as f:
             r = f.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         row_id = df["DATE"].idxmax()
-        row = df.iloc[row_id]
+        row = df.iloc[[row_id]]
         return row
 
-    def query_last_data(self, acc_name, sub_name, date):
+    def query_last_data(self, date, acc, sub):
         with self.fsql as f:
-            r = f.query_asset(acc_name, sub_name)
+            r = f.query_asset(acc, sub)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
 
-        print("1111111111111111111")
-        print(date)
-        print(df)
-        closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
+        closest_row = df.iloc[[df[df["DATE"] < date]["DATE"].idxmax()]]
         return closest_row
 
     def query_period_data(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
@@ -262,20 +268,30 @@ class FinContext:
         e, l = self.get_date_range()
         return e
 
-    def get_asset(self, acc_name, asset_name):
+    def get_asset(self, acc_name, sub_name):
         if acc_name not in self.acc:
             return None
         acc = self.acc[acc_name]
-        return acc.asset(asset_name)
+        return acc.asset(sub_name)
 
-    def has_asset(self, acc_name, asset_name):
-        return self.get_asset(acc_name, asset_name) is not None
+    def has_asset(self, acc_name, sub_name):
+        return self.get_asset(acc_name, sub_name) is not None
+
+    def query_exist(self, date, acc, sub):
+        with self.fsql as s:
+            return s.query_data_exist(date, acc, sub)
 
     def insert_asset(self, date, acc_name, sub_name, networth, invest, profit):
         insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, sub_name, networth, invest, profit])}
         with self.fsql as s:
             s.insert_asset(insert_data)
             s.commit()
+
+    def insert_or_update(self, date, acc, sub, net, inflow, profit):
+        if self.query_exist(date, acc, sub):
+            self.update_data(date, acc, sub, net, inflow, profit)
+        else:
+            self.insert_asset(date, acc, sub, net, inflow, profit)
 
     def delete_data(self, date, acc_name, sub_name):
         filter = {"DATE": date, "ACCOUNT": acc_name, "SUBACCOUNT": sub_name}
@@ -290,14 +306,14 @@ class FinContext:
             s.update_data(filter, update_data)
             s.commit()
 
-    def delete_asset(self, acc_name, asset_name):
+    def delete_asset(self, acc_name, sub_name):
         with self.fsql as s:
-            s.delete_asset(acc_name, asset_name)
+            s.delete_asset(acc_name, sub_name)
 
         if acc_name not in self.acc:
             return
         acc = self.acc[acc_name]
-        acc.asset_list = [x for x in acc.asset_list if x.name != asset_name]
+        acc.asset_list = [x for x in acc.asset_list if x.name != sub_name]
         self.write_config()
 
     def load_from_df(self, df: pd.DataFrame):
@@ -316,14 +332,13 @@ class FinContext:
         return df.to_csv(index=False).encode("utf-8")
 
     def asset_table(self):
-        #cols = ["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]
         cols = ASSET_TABLE.cols_name()
         with self.fsql as s:
             r = s.query_all_asset()
             df = pd.DataFrame(r, columns=cols)
 
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
-        df = df[["DATE", "SUBACCOUNT", "NET_WORTH"]]
+        df = df[["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH"]]
         return df
 
     def overview_chart(self):
@@ -344,11 +359,16 @@ class FinContext:
         fig.add_bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL")
         return fig
 
+    def overview_area_chart(self):
+        df = self.asset_table()
+        fig = px.area(df, x="DATE", y="NET_WORTH", color="SUBACCOUNT", line_group="ACCOUNT")
+        return fig
+
     def allocation_pie(self, date=None):
         date = self.get_latest_date() if date is None else date
         df = self.query_date(date)
         df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Asset Allocation")
+        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Account Allocation")
         return fig
 
     def category_pie(self, cat: str, date: str = None):
@@ -483,13 +503,13 @@ class FinContext:
         with self.fsql as s:
             seed = 0
             for k, v in self.acc.items():
-                for ass in v.asset_list:
-                    r = ass.cats["Risk"] if "Risk" in ass.cats else "Low"
+                for sub in v.asset_list:
+                    r = sub.cats["Risk"] if "Risk" in sub.cats else "Low"
                     data: list[list] = generate_data(period_range, r, seed)
                     seed += 1
                     for i in data:
                         d = list(i)
-                        d.insert(1, ass.name)
+                        d.insert(1, sub.name)
                         d.insert(1, v.name)
                         insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), d)}
                         s.insert_asset(insert_data)

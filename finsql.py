@@ -17,7 +17,6 @@ class SQLColDef:
     def col_def_str(self):
         return f"{self.name} {self.type} {self.constraint}"
 
-
 class SQLTableDef:
 
     def __init__(self, name: str = "", cols: list[SQLColDef] = [], ex_cols: list[SQLColDef] = []):
@@ -50,6 +49,15 @@ class SQLTableDef:
             col_def = ess_col_def
 
         return f"CREATE TABLE {self.name()} ({col_def});"
+
+    def round_df(self, df: pd.DataFrame):
+        cols = df.columns
+
+        for col in self._ess_cols:
+            if col.type == "REAL":
+                if col.name in cols:
+                    df[col.name] = df[col.name].round(1)
+        return df
 
 
 COL_DATE = SQLColDef("DATE", "TEXT", "NOT NULL")
@@ -117,8 +125,8 @@ class Account:
         for asset in self.asset_list:
             asset.add_to_df(df)
 
-    def asset(self, asset_name):
-        asset = next(filter(lambda x: x.name == asset_name, self.asset_list), None)
+    def asset(self, sub_name):
+        asset = next(filter(lambda x: x.name == sub_name, self.asset_list), None)
         return asset
 
 
@@ -256,8 +264,12 @@ class FinSQL:
         results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}"''').fetchall()
         return results
 
-    def query_data_exist(self, date, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''').fetchall()
+    def query_subacc_by_date(self, date, acc, sub):
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''').fetchall()
+        return results
+
+    def query_data_exist(self, date, acc, sub):
+        results = self.query_subacc_by_date(date, acc, sub)
         return len(results) > 0
 
     def update_data(self, filter: dict, data: dict):

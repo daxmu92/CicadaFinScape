@@ -113,7 +113,8 @@ with st.sidebar:
     if st.button("Clear Data"):
         clear_data_dia()
 
-overview_chart = context.overview_chart()
+#overview_chart = context.overview_chart()
+overview_chart = context.overview_area_chart()
 st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
 
 allocation_pie = context.allocation_pie()
