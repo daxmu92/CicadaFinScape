@@ -1,7 +1,7 @@
-import sys
 import streamlit as st
 import pandas as pd
-import re
+
+import sys
 
 sys.path.append("..")
 from context import FinContext
@@ -15,21 +15,20 @@ st.set_page_config(page_title="Account")
 st.sidebar.header("Account")
 st.header("Account")
 
-acc_name_list = [v.name for k, v in context.acc.items()]
+acc_name_list = context.acc_name_list()
 tabs = st.tabs(acc_name_list)
 for index, tab in enumerate(tabs):
     with tab:
         acc_name = acc_name_list[index]
-        acc = context.acc[acc_name]
-        assets_name = [x.name for x in acc.asset_list]
+        sub_name_list = context.subacc_name_list(acc_name)
 
-        if not assets_name:
+        if not sub_name_list:
             st.write(f"### You don't have any asset under account {acc_name}.")
             if st.button("Add asset", type="primary", key="ass_add_asset"):
                 fw.add_asset()
             st.stop()
 
-        sub_name = st.radio("Choose your subaccount", assets_name, key=f"Choose-asset-{acc}-{index}", label_visibility="collapsed")
+        sub_name = st.radio("Choose your subaccount", sub_name_list, key=f"Choose-asset-{acc_name}-{index}", label_visibility="collapsed")
         account_and_sub = f"{acc_name}-{sub_name}"
         asset_df = context.asset_df(acc_name, sub_name)
         asset_df.sort_values("DATE", ascending=False, inplace=True)

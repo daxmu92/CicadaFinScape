@@ -1,4 +1,8 @@
 import streamlit as st
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import pandas as pd
 from context import FinContext
 import finutils as fu
@@ -46,7 +50,6 @@ def month_radio(key=0):
     cur_month = fu.cur_month()
     index = cur_month - month_list[0]
     return st.radio("Month", month_list, index=index, key=key, horizontal=True)
-
 
 def year_month_selector(key=0):
     year = year_selector(key="add_asset_dia_year")
@@ -132,28 +135,29 @@ def net_inflow_profit_sync_input(last_net):
         if "ass_add_ass_record_period_input0" not in st.session_state:
             return
         net_change = st.session_state["ass_add_ass_record_period_input0"] - last_net
-        print(net_change)
-        if last_change == "ass_add_ass_record_period_input1":
+        if last_change == "input0":
             st.session_state["ass_add_ass_record_period_input2"] = net_change - st.session_state["ass_add_ass_record_period_input1"]
-        elif last_change == "ass_add_ass_record_period_input2":
+        elif last_change == "input1":
+            st.session_state["ass_add_ass_record_period_input2"] = net_change - st.session_state["ass_add_ass_record_period_input1"]
+        elif last_change == "input2":
             st.session_state["ass_add_ass_record_period_input1"] = net_change - st.session_state["ass_add_ass_record_period_input2"]
         else:
             st.exception(RuntimeError("should not reach here"))
         return
 
     if st.toggle("Auto fill", value=True, key="ass_add_ass_record_toggle"):
-        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("ass_add_ass_record_period_input1",))
-        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("ass_add_ass_record_period_input2",))
+        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0", value=last_net, on_change=update, args=("input0",))
+        inflow = st.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1",))
+        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("input2",))
     else:
         net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1")
+        inflow = st.number_input("INFLOW", key="ass_add_ass_record_period_input1")
         profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2")
 
-    return net, invest, profit
+    return net, inflow, profit
 
 
-def show_last_and_cur_record(last_row, cur_row):
+def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
     info_df = pd.concat([last_row, cur_row], ignore_index=True)
     info_df = info_df[["DATE", "NET_WORTH", "INFLOW", "PROFIT"]]
     info_str = ""
@@ -188,7 +192,6 @@ def insert_or_update_record_dia(acc, sub):
     if st.button("Submit", key="ass_add_ass_record_button", type="primary"):
         context.insert_or_update(date, acc, sub, net, invest, profit)
         st.rerun()
-
 
 @st.experimental_dialog("DELETE SUBACCOUNT")
 def delete_subaccount_dia(acc_name, sub_name):
