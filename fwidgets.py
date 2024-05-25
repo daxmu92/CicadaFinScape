@@ -24,13 +24,13 @@ def add_asset():
         st.rerun()
 
 
-def editable_accounts(df=None, key=0):
+def editable_accounts(df=None, key=0, container_width=False):
     context: FinContext = st.session_state['context']
     col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
     if df is None:
         df = context.account_df()
     col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in df.columns if col not in context.cat_dict})
-    return st.data_editor(df, hide_index=True, column_config=col_config, key=key)
+    return st.data_editor(df, hide_index=True, column_config=col_config, key=key, use_container_width=container_width)
 
 
 def year_selector(key=0):
@@ -41,12 +41,18 @@ def year_selector(key=0):
         index = cur_year - year_list[0]
     return st.selectbox("Year", year_list, index=index, key=key)
 
-
 def month_radio(key=0):
     month_list = list(range(1, 13))
     cur_month = fu.cur_month()
     index = cur_month - month_list[0]
     return st.radio("Month", month_list, index=index, key=key, horizontal=True)
+
+
+def year_month_selector(key=0):
+    year = year_selector(key="add_asset_dia_year")
+    month = month_radio(key="add_asset_dia_month")
+    date = pd.Period(year=year, month=month, freq="M").strftime("%Y-%m")
+    return date
 
 
 @st.experimental_dialog("RESET DATA TO SAMPLE DATA")
@@ -97,7 +103,7 @@ def load_from_csv_dia():
 
             acc_df = pd.DataFrame(columns=cols, data=acc_data)
 
-            acc_df = fw.editable_accounts(acc_df, key="load_csv_acc_edit_df")
+            acc_df = editable_accounts(acc_df, key="load_csv_acc_edit_df", container_width=True)
 
         if st.button("Submit", key="load_csv_submit", type="primary"):
             context.load_from_df(data_df)
@@ -120,20 +126,36 @@ def init_db():
         st.rerun()
 
 
-@st.experimental_dialog("ADD OR UPDATE SUBACCOUNT RECORD")
-def insert_or_update_record_dia(acc_name, sub_name):
-    context: FinContext = st.session_state["context"]
-    year = year_selector(key="add_asset_dia_year")
-    month = month_radio(key="add_asset_dia_month")
-    date = pd.Period(year=year, month=month, freq="M").strftime("%Y-%m")
+def net_inflow_profit_sync_input(last_net):
 
-    last_row: pd.DataFrame = context.query_last_data(date, acc_name, sub_name)
-    cur_row: pd.DataFrame = context.query_subacc_by_date(date, acc_name, sub_name, False)
-    last_net = 0 if last_row.empty else last_row.iloc[0]["NET_WORTH"]
+    def update(last_change):
+        if "ass_add_ass_record_period_input0" not in st.session_state:
+            return
+        net_change = st.session_state["ass_add_ass_record_period_input0"] - last_net
+        print(net_change)
+        if last_change == "ass_add_ass_record_period_input1":
+            st.session_state["ass_add_ass_record_period_input2"] = net_change - st.session_state["ass_add_ass_record_period_input1"]
+        elif last_change == "ass_add_ass_record_period_input2":
+            st.session_state["ass_add_ass_record_period_input1"] = net_change - st.session_state["ass_add_ass_record_period_input2"]
+        else:
+            st.exception(RuntimeError("should not reach here"))
+        return
 
+    if st.toggle("Auto fill", value=True, key="ass_add_ass_record_toggle"):
+        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
+        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("ass_add_ass_record_period_input1",))
+        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("ass_add_ass_record_period_input2",))
+    else:
+        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
+        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1")
+        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2")
+
+    return net, invest, profit
+
+
+def show_last_and_cur_record(last_row, cur_row):
     info_df = pd.concat([last_row, cur_row], ignore_index=True)
     info_df = info_df[["DATE", "NET_WORTH", "INFLOW", "PROFIT"]]
-
     info_str = ""
     if (not last_row.empty) and (not cur_row.empty):
         info_str = f"Found existing data and previous record:"
@@ -149,31 +171,22 @@ def insert_or_update_record_dia(acc_name, sub_name):
     else:
         st.info(f"Doesn't find previous record")
 
-    if st.toggle("Auto fill", value=True, key="ass_add_ass_record_toggle"):
 
-        def update(last_change):
-            if "ass_add_ass_record_period_input0" not in st.session_state:
-                return
-            net_change = st.session_state["ass_add_ass_record_period_input0"] - last_net
-            print(net_change)
-            if last_change == "ass_add_ass_record_period_input1":
-                st.session_state["ass_add_ass_record_period_input2"] = net_change - st.session_state["ass_add_ass_record_period_input1"]
-            elif last_change == "ass_add_ass_record_period_input2":
-                st.session_state["ass_add_ass_record_period_input1"] = net_change - st.session_state["ass_add_ass_record_period_input2"]
-            else:
-                st.exception(RuntimeError("should not reach here"))
-            return
+@st.experimental_dialog("ADD OR UPDATE SUBACCOUNT RECORD")
+def insert_or_update_record_dia(acc, sub):
+    date = year_month_selector()
 
-        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("ass_add_ass_record_period_input1",))
-        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("ass_add_ass_record_period_input2",))
-    else:
-        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        invest = st.number_input("INFLOW", key="ass_add_ass_record_period_input1")
-        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2")
+    context: FinContext = st.session_state["context"]
+    last_row: pd.DataFrame = context.query_last_data(date, acc, sub)
+    cur_row: pd.DataFrame = context.query_subacc_by_date(date, acc, sub, False)
+    last_net = 0 if last_row.empty else last_row.iloc[0]["NET_WORTH"]
+
+    show_last_and_cur_record(last_row, cur_row)
+
+    net, invest, profit = net_inflow_profit_sync_input(last_net)
 
     if st.button("Submit", key="ass_add_ass_record_button", type="primary"):
-        context.insert_or_update(date, acc_name, sub_name, net, invest, profit)
+        context.insert_or_update(date, acc, sub, net, invest, profit)
         st.rerun()
 
 
