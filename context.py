@@ -45,17 +45,17 @@ class FinContext:
             for i in self.config["Assets"]:
                 acc_name = i["Account"]
                 if acc_name not in self.acc:
-                    FinLogger.error(f"Doesn't find account f{acc_name}")
+                    FinLogger.exception(f"Doesn't find account f{acc_name}")
                 acc = self.acc[acc_name]
                 asset = AssetItem(i["Name"], acc)
                 acc.add_asset(asset)
                 if "Category" in i:
                     for cat, type in i["Category"].items():
                         if cat not in self.cat_dict:
-                            FinLogger.error(f"Found category {cat} is not in category config {self.cat_dict}")
+                            FinLogger.exception(f"Found category {cat} is not in category config {self.cat_dict}")
                             continue
                         if (type not in self.cat_dict[cat]) and (type is not None):
-                            FinLogger.error(f"Found type {type} is not in category {cat}")
+                            FinLogger.exception(f"Found type {type} is not in category {cat}")
                             continue
                         asset.add_cat(cat, type)
 
@@ -108,6 +108,14 @@ class FinContext:
             asset.add_cat(k, v)
         acc.add_asset(asset)
         self.write_config()
+
+    def acc_name_list(self):
+        acc_name_list = [v.name for k, v in self.acc.items()]
+        return acc_name_list
+
+    def subacc_name_list(self, acc_name):
+        sub_name_list = [x.name for x in self.acc[acc_name].asset_list]
+        return sub_name_list
 
     def init_db(self):
         with self.fsql as s:
@@ -388,7 +396,7 @@ class FinContext:
         date = self.get_latest_date() if date is None else date
         df = self.query_date(date)
         if cat not in self.cat_dict:
-            FinLogger.error(f"{cat} is not in category config")
+            FinLogger.exception(f"{cat} is not in category config")
 
         # remove invalid data
         print(df)
