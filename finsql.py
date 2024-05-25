@@ -17,7 +17,6 @@ class SQLColDef:
     def col_def_str(self):
         return f"{self.name} {self.type} {self.constraint}"
 
-
 class SQLTableDef:
 
     def __init__(self, name: str = "", cols: list[SQLColDef] = [], ex_cols: list[SQLColDef] = []):
@@ -51,14 +50,23 @@ class SQLTableDef:
 
         return f"CREATE TABLE {self.name()} ({col_def});"
 
+    def round_df(self, df: pd.DataFrame):
+        cols = df.columns
+
+        for col in self._ess_cols:
+            if col.type == "REAL":
+                if col.name in cols:
+                    df[col.name] = df[col.name].round(1)
+        return df
+
 
 COL_DATE = SQLColDef("DATE", "TEXT", "NOT NULL")
 COL_ACCOUNT = SQLColDef("ACCOUNT", "TEXT", "NOT NULL")
-COL_NAME = SQLColDef("NAME", "TEXT", "NOT NULL")
+COL_NAME = SQLColDef("SUBACCOUNT", "TEXT", "NOT NULL")
 COL_NET_WORTH = SQLColDef("NET_WORTH", "REAL", "NOT NULL")
-COL_MONTH_INVESTMENT = SQLColDef("MONTH_INVESTMENT", "REAL", "NOT NULL")
-COL_MONTH_PROFIT = SQLColDef("MONTH_PROFIT", "REAL", "NOT NULL")
-ASSET_TABLE = SQLTableDef("ASSET", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_MONTH_INVESTMENT, COL_MONTH_PROFIT])
+COL_INFLOW = SQLColDef("INFLOW", "REAL", "NOT NULL")
+COL_PROFIT = SQLColDef("PROFIT", "REAL", "NOT NULL")
+ASSET_TABLE = SQLTableDef("SUBACCOUNT", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_INFLOW, COL_PROFIT])
 
 
 class AssetItem:
@@ -117,8 +125,8 @@ class Account:
         for asset in self.asset_list:
             asset.add_to_df(df)
 
-    def asset(self, asset_name):
-        asset = next(filter(lambda x: x.name == asset_name, self.asset_list), None)
+    def asset(self, sub_name):
+        asset = next(filter(lambda x: x.name == sub_name, self.asset_list), None)
         return asset
 
 
@@ -215,7 +223,7 @@ class FinSQL:
         return cmd
 
     def cmd_filter_acc_ass(len_of_values):
-        return FinSQL.cmd_filter_cols(["ACCOUNT", "NAME"], len_of_values)
+        return FinSQL.cmd_filter_cols(["ACCOUNT", "SUBACCOUNT"], len_of_values)
 
     def load_from_csv(self, csv_path):
         with open(csv_path, 'r') as f:
@@ -229,7 +237,7 @@ class FinSQL:
         self.db.commit()
 
     def query_asset(self, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         return results
 
     def query_all_asset(self):
@@ -256,8 +264,12 @@ class FinSQL:
         results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}"''').fetchall()
         return results
 
-    def query_data_exist(self, date, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc_name}" and NAME = "{name}"''').fetchall()
+    def query_subacc_by_date(self, date, acc, sub):
+        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''').fetchall()
+        return results
+
+    def query_data_exist(self, date, acc, sub):
+        results = self.query_subacc_by_date(date, acc, sub)
         return len(results) > 0
 
     def update_data(self, filter: dict, data: dict):
@@ -324,7 +336,7 @@ class FinSQL:
         self.exec(execute_str)
 
     def delete_asset(self, acc_name, name):
-        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and NAME = "{name}"''')
+        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         self.db.commit()
 
     def query_col(self, cols):

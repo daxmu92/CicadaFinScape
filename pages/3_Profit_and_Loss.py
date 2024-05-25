@@ -4,7 +4,6 @@ import pandas as pd
 
 sys.path.append("..")
 from context import FinContext
-from st_utils import FinWidgets
 import fwidgets as fw
 import finutils as fu
 

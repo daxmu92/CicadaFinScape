@@ -28,3 +28,11 @@ def norm_date(date):
 def date_list(start_date, end_date):
     period_range = pd.period_range(start=start_date, end=end_date, freq='M')
     return [p.strftime("%Y-%m") for p in period_range]
+
+
+def round_df(df: pd.DataFrame, cols):
+    return df.round({c: 1 for c in cols})
+
+
+def format_dec_df(df: pd.DataFrame, cols):
+    return df.style.format({c: "{:.1f}" for c in cols})

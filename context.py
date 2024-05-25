@@ -95,15 +95,15 @@ class FinContext:
 
     def clean_up_cat(self):
         for k, v in self.acc.items():
-            for ass in v.asset_list:
-                ass.cats = {k: v for k, v in ass.cats.items() if k in self.cat_dict}
+            for sub in v.asset_list:
+                sub.cats = {k: v for k, v in sub.cats.items() if k in self.cat_dict}
 
-    def add_asset(self, acc_name, asset_name, cats: dict):
+    def add_asset(self, acc_name, sub_name, cats: dict):
         if acc_name not in self.acc:
             self.acc[acc_name] = Account(acc_name)
 
         acc = self.acc[acc_name]
-        asset = AssetItem(asset_name, acc)
+        asset = AssetItem(sub_name, acc)
         for k, v in cats.items():
             asset.add_cat(k, v)
         acc.add_asset(asset)
@@ -123,16 +123,16 @@ class FinContext:
         self.load_from_csv(csv_path)
 
     def combine_acc_ass(df):
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         return df
 
-    def asset_df(self, acc_name, asset_name):
-        cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
+    def asset_df(self, acc_name, sub_name) -> pd.DataFrame:
+        cols = ["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]
         with self.fsql as s:
-            r = s.query_asset(acc_name, asset_name)
+            r = s.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=cols)
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]]
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+        df = df[["DATE", "SUBACCOUNT", "NET_WORTH", "INFLOW", "PROFIT"]]
         return df
 
     def account_df(self):
@@ -146,14 +146,14 @@ class FinContext:
     def account_from_df(self, df: pd.DataFrame):
         for index, row in df.iterrows():
             acc_name = row["Account"]
-            asset_name = row["Name"]
+            sub_name = row["Name"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
 
-            asset = acc.asset(asset_name)
+            asset = acc.asset(sub_name)
             if asset is None:
-                asset = AssetItem(asset_name, acc)
+                asset = AssetItem(sub_name, acc)
                 acc.add_asset(asset)
 
             for k, v in row.items():
@@ -167,15 +167,15 @@ class FinContext:
         for index, row in df.iterrows():
             print(row)
             acc_name = row["ACCOUNT"]
-            asset_name = row["NAME"]
+            sub_name = row["SUBACCOUNT"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
 
-            asset = acc.asset(asset_name)
+            asset = acc.asset(sub_name)
             assert (asset is None)
 
-            asset = AssetItem(asset_name, acc)
+            asset = AssetItem(sub_name, acc)
             acc.add_asset(asset)
 
             for k, v in row.items():
@@ -204,23 +204,29 @@ class FinContext:
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         return df
 
-    def query_latest_data(self, acc_name, ass_name):
+    def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist):
+        if use_pre_if_not_exist:
+            return self.query_last_data(date, acc, sub)
+
+        with self.fsql as s:
+            r = s.query_subacc_by_date(date, acc, sub)
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+        return df
+
+    def query_latest_data(self, acc_name, sub_name):
         with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
+            r = f.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
         row_id = df["DATE"].idxmax()
-        row = df.iloc[row_id]
+        row = df.iloc[[row_id]]
         return row
 
-    def query_last_data(self, acc_name, ass_name, date):
+    def query_last_data(self, date, acc, sub):
         with self.fsql as f:
-            r = f.query_asset(acc_name, ass_name)
+            r = f.query_asset(acc, sub)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
 
-        print("1111111111111111111")
-        print(date)
-        print(df)
-        closest_row = df.iloc[df[df["DATE"] < date]["DATE"].idxmax()]
+        closest_row = df.iloc[[df[df["DATE"] < date]["DATE"].idxmax()]]
         return closest_row
 
     def query_period_data(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
@@ -242,8 +248,8 @@ class FinContext:
 
 
 #
-# df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-# df = df[["DATE", "ASSET", "NET_WORTH"]]
+# df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+# df = df[["DATE", "SUBACCOUNT", "NET_WORTH"]]
 # return df
 
     def get_date_range(self):
@@ -262,42 +268,52 @@ class FinContext:
         e, l = self.get_date_range()
         return e
 
-    def get_asset(self, acc_name, asset_name):
+    def get_asset(self, acc_name, sub_name):
         if acc_name not in self.acc:
             return None
         acc = self.acc[acc_name]
-        return acc.asset(asset_name)
+        return acc.asset(sub_name)
 
-    def has_asset(self, acc_name, asset_name):
-        return self.get_asset(acc_name, asset_name) is not None
+    def has_asset(self, acc_name, sub_name):
+        return self.get_asset(acc_name, sub_name) is not None
 
-    def insert_asset(self, date, acc_name, ass_name, networth, invest, profit):
-        insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, ass_name, networth, invest, profit])}
+    def query_exist(self, date, acc, sub):
+        with self.fsql as s:
+            return s.query_data_exist(date, acc, sub)
+
+    def insert_asset(self, date, acc_name, sub_name, networth, invest, profit):
+        insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), [date, acc_name, sub_name, networth, invest, profit])}
         with self.fsql as s:
             s.insert_asset(insert_data)
             s.commit()
 
-    def delete_data(self, date, acc_name, ass_name):
-        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
+    def insert_or_update(self, date, acc, sub, net, inflow, profit):
+        if self.query_exist(date, acc, sub):
+            self.update_data(date, acc, sub, net, inflow, profit)
+        else:
+            self.insert_asset(date, acc, sub, net, inflow, profit)
+
+    def delete_data(self, date, acc_name, sub_name):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "SUBACCOUNT": sub_name}
         with self.fsql as s:
             s.delete_data(filter)
             s.commit()
 
-    def update_data(self, date, acc_name, ass_name, networth, invest, profit):
-        filter = {"DATE": date, "ACCOUNT": acc_name, "NAME": ass_name}
-        update_data = {"NET_WORTH": networth, "MONTH_INVESTMENT": invest, "MONTH_PROFIT": profit}
+    def update_data(self, date, acc_name, sub_name, networth, invest, profit):
+        filter = {"DATE": date, "ACCOUNT": acc_name, "SUBACCOUNT": sub_name}
+        update_data = {"NET_WORTH": networth, "INFLOW": invest, "PROFIT": profit}
         with self.fsql as s:
             s.update_data(filter, update_data)
             s.commit()
 
-    def delete_asset(self, acc_name, asset_name):
+    def delete_asset(self, acc_name, sub_name):
         with self.fsql as s:
-            s.delete_asset(acc_name, asset_name)
+            s.delete_asset(acc_name, sub_name)
 
         if acc_name not in self.acc:
             return
         acc = self.acc[acc_name]
-        acc.asset_list = [x for x in acc.asset_list if x.name != asset_name]
+        acc.asset_list = [x for x in acc.asset_list if x.name != sub_name]
         self.write_config()
 
     def load_from_df(self, df: pd.DataFrame):
@@ -316,14 +332,13 @@ class FinContext:
         return df.to_csv(index=False).encode("utf-8")
 
     def asset_table(self):
-        #cols = ["DATE", "ACCOUNT", "NAME", "NET_WORTH", "MONTH_INVEST", "MONTH_PROFIT"]
         cols = ASSET_TABLE.cols_name()
         with self.fsql as s:
             r = s.query_all_asset()
             df = pd.DataFrame(r, columns=cols)
 
-        df["ASSET"] = df['ACCOUNT'] + '-' + df['NAME']
-        df = df[["DATE", "ASSET", "NET_WORTH"]]
+        df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
+        df = df[["DATE", "ACCOUNT", "SUBACCOUNT", "NET_WORTH"]]
         return df
 
     def overview_chart(self):
@@ -331,7 +346,7 @@ class FinContext:
         df_sum = df.copy()
         df_sum = df_sum.groupby("DATE")["NET_WORTH"].sum().reset_index()
         df_sum.rename(columns={"NET_WORTH": "TOTAL_NET_WORTH"}, inplace=True)
-        fig = px.line(df, x='DATE', y='NET_WORTH', color="ASSET")
+        fig = px.line(df, x='DATE', y='NET_WORTH', color="SUBACCOUNT")
         # TODO - add secondary y
         # fig = go.Figure(fig)
         # fig.add_trace(
@@ -344,24 +359,29 @@ class FinContext:
         fig.add_bar(x=df_sum["DATE"], y=df_sum["TOTAL_NET_WORTH"], name="TOTAL")
         return fig
 
+    def overview_area_chart(self):
+        df = self.asset_table()
+        fig = px.area(df, x="DATE", y="NET_WORTH", color="SUBACCOUNT", line_group="ACCOUNT")
+        return fig
+
     def allocation_pie(self, date=None):
         date = self.get_latest_date() if date is None else date
         df = self.query_date(date)
         df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="ASSET", title=f"{date} Asset Allocation")
+        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Account Allocation")
         return fig
 
     def category_pie(self, cat: str, date: str = None):
 
         def is_valid_data(row):
             acc_name = row["ACCOUNT"]
-            ass_name = row["NAME"]
-            return self.has_asset(acc_name, ass_name)
+            sub_name = row["SUBACCOUNT"]
+            return self.has_asset(acc_name, sub_name)
 
         def assign_cat(row):
             acc_name = row["ACCOUNT"]
-            ass_name = row["NAME"]
-            asset: AssetItem = self.get_asset(acc_name, ass_name)
+            sub_name = row["SUBACCOUNT"]
+            asset: AssetItem = self.get_asset(acc_name, sub_name)
             return asset.cats.get(cat)
 
         # get the latest data
@@ -385,7 +405,7 @@ class FinContext:
 
     def profit_waterfall(self, start_date, end_date):
         df = self.query_period_data(start_date, end_date)
-        df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
+        df_sum = df.groupby("DATE")["PROFIT"].sum().reset_index()
 
         layout = {
             "xaxis": {
@@ -437,7 +457,7 @@ class FinContext:
         }
         fig = go.Figure(go.Waterfall(
             x=df_sum["DATE"],
-            y=df_sum["MONTH_PROFIT"],
+            y=df_sum["PROFIT"],
         ), layout=layout)
         return fig
 
@@ -445,7 +465,7 @@ class FinContext:
         # TODO https://calendar-component.streamlit.app/
         pass
         #df = self.query_period_data(start_date, end_date)
-        #df_sum = df.groupby("DATE")["MONTH_PROFIT"].sum().reset_index()
+        #df_sum = df.groupby("DATE")["PROFIT"].sum().reset_index()
 
     def initialize_with_sample_data(self):
 
@@ -483,13 +503,13 @@ class FinContext:
         with self.fsql as s:
             seed = 0
             for k, v in self.acc.items():
-                for ass in v.asset_list:
-                    r = ass.cats["Risk"] if "Risk" in ass.cats else "Low"
+                for sub in v.asset_list:
+                    r = sub.cats["Risk"] if "Risk" in sub.cats else "Low"
                     data: list[list] = generate_data(period_range, r, seed)
                     seed += 1
                     for i in data:
                         d = list(i)
-                        d.insert(1, ass.name)
+                        d.insert(1, sub.name)
                         d.insert(1, v.name)
                         insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), d)}
                         s.insert_asset(insert_data)
