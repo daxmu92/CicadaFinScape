@@ -76,9 +76,11 @@ def get_acc():
 if "cicada_record_journey_date" not in st.session_state:
     st.info("Select a date")
     date = fw.year_month_selector()
-    if st.button("Start", key="cicada_record_journey_start_button"):
-        st.session_state["cicada_record_journey_date"] = date
-        st.rerun()
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("Start", key="cicada_record_journey_start_button", use_container_width=True, type="primary"):
+            st.session_state["cicada_record_journey_date"] = date
+            st.rerun()
     st.stop()
 
 date = st.session_state["cicada_record_journey_date"]

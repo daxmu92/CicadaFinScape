@@ -58,12 +58,13 @@ with st.sidebar:
     st.download_button("Download your accounts config",
                        data=context.config_json(),
                        file_name=f"cfs-accounts-config-{fu.cur_date()}.json",
-                       mime="application/json")
-    if st.button("Upload your accounts config", key="side_bar_upload_config_buttong"):
+                       mime="application/json",
+                       use_container_width=True)
+    if st.button("Upload your accounts config", key="side_bar_upload_config_buttong", use_container_width=True):
         load_acc_config_from_json_dia()
-    if st.button("Add account", type="primary", key="acc_add_asset"):
+    if st.button("Add account", type="primary", key="acc_add_asset", use_container_width=True):
         fw.add_account()
-    if st.button("Delete account", key="acc_delete_asset"):
+    if st.button("Delete account", key="acc_delete_asset", use_container_width=True):
         fw.delete_account()
 
 # category
@@ -77,11 +78,11 @@ df = st.data_editor(cat_df,
                     column_config=col_config,
                     key=st.session_state['acc_cat_df_key'],
                     use_container_width=True)
-col1, col2 = st.columns([2, 11])
+col1, col2 = st.columns(2)
 with col1:
-    st.button("Submit", on_click=FinContext.category_from_df, args=(context, df), type="primary", key="acc_cat_df_submit")
+    st.button("Submit", on_click=FinContext.category_from_df, args=(context, df), type="primary", key="acc_cat_df_submit", use_container_width=True)
 with col2:
-    if st.button("Reset"):
+    if st.button("Reset", use_container_width=True):
         k_incre_all()
         st.rerun()
 
@@ -95,4 +96,11 @@ else:
     account_df = context.account_df()
     col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in account_df.columns if col not in context.cat_dict})
     df = st.data_editor(account_df, hide_index=True, column_config=col_config, use_container_width=True)
-    st.button("Submit", on_click=FinContext.account_from_df, args=(context, df), type="primary", key="acc_acc_df_submit")
+    cols = st.columns(3)
+    with cols[0]:
+        st.button("Submit",
+                  on_click=FinContext.account_from_df,
+                  args=(context, df),
+                  type="primary",
+                  key="acc_acc_df_submit",
+                  use_container_width=True)
