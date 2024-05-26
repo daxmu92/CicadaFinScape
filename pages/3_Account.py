@@ -12,8 +12,8 @@ import finutils as fu
 context: FinContext = st.session_state['context']
 
 st.set_page_config(page_title="Account")
-st.sidebar.header("Account")
-st.header("Account")
+st.title("Account")
+st.divider()
 
 acc_name_list = context.acc_name_list()
 tabs = st.tabs(acc_name_list)
@@ -41,13 +41,12 @@ for index, tab in enumerate(tabs):
         df = st.data_editor(asset_df, hide_index=True, key=account_and_sub + "-df", use_container_width=True, column_config=col_configs)
         date_list = df.loc[df["Select"]]["DATE"]
 
-        # TODO - use https://github.com/victoryhb/streamlit-option-menu
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
-            if st.button("Add/Update record", key=f"{account_and_sub}-add", type="primary"):
+            if st.button("Add/Update record", key=f"{account_and_sub}-add", type="primary", use_container_width=True):
                 fw.insert_or_update_record_dia(acc_name, sub_name)
         with col2:
-            if st.button("Delete Selected", key=f"asset-{account_and_sub}-delete"):
+            if st.button("Delete Selected", key=f"asset-{account_and_sub}-delete", use_container_width=True):
                 fw.delete_selected_data_dia(acc_name, sub_name, date_list)
 
         # if st.button("DELETE SUBACCOUNT", key=account_and_sub + "-delete"):

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from streamlit_option_menu import option_menu
 import sys
+from streamlit_extras.grid import grid
 
 sys.path.append("..")
 
@@ -11,6 +11,7 @@ from st_utils import FinLogger
 import fwidgets as fw
 import finutils as fu
 
+st.set_page_config(page_title="New record journey",)
 st.title("Start a Cicada record journey")
 st.divider()
 context: FinContext = st.session_state['context']
@@ -75,9 +76,11 @@ def get_acc():
 if "cicada_record_journey_date" not in st.session_state:
     st.info("Select a date")
     date = fw.year_month_selector()
-    if st.button("Start", key="cicada_record_journey_start_button"):
-        st.session_state["cicada_record_journey_date"] = date
-        st.rerun()
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("Start", key="cicada_record_journey_start_button", use_container_width=True, type="primary"):
+            st.session_state["cicada_record_journey_date"] = date
+            st.rerun()
     st.stop()
 
 date = st.session_state["cicada_record_journey_date"]
@@ -111,18 +114,10 @@ def new_record_menu_onchange(key):
     st.rerun()
 
 
-col1, col2, col3 = st.columns([20, 18, 6])
-with col1:
-    if st.button("Submit", key=f"new_record_journey_menu_submit", type="primary"):
-        new_record_menu_onchange("Submit")
-with col2:
-    if st.button("Skip", key=f"new_record_journey_menu_skip"):
-        new_record_menu_onchange("Skip")
-with col3:
-    if st.button("Cancel", key=f"new_record_journey_menu_cancel"):
-        new_record_menu_onchange("Cancel")
-
-# TODO - use menu when https://github.com/victoryhb/streamlit-option-menu/issues/70 fixed
-# journey_menu = option_menu(None, ["Submit", "Skip", "Cancel"],
-#                         icons=['send', 'chevron-double-right', "x-square"],
-#                         on_change=new_record_menu_onchange, key='new_record_journey_menu', orientation="horizontal", default_index=-1)
+g = grid(3, gap="small")
+if g.button("Submit", key=f"new_record_journey_menu_submit", type="primary", use_container_width=True):
+    new_record_menu_onchange("Submit")
+if g.button("Skip", key=f"new_record_journey_menu_skip", use_container_width=True):
+    new_record_menu_onchange("Skip")
+if g.button("Cancel", key=f"new_record_journey_menu_cancel", use_container_width=True):
+    new_record_menu_onchange("Cancel")

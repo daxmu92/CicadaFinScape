@@ -8,6 +8,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 from finsql import Account, AssetItem, FinSQL, ASSET_TABLE
+import finutils as fu
 from st_utils import FinLogger
 
 
@@ -144,7 +145,7 @@ class FinContext:
         return df
 
     def account_df(self):
-        cols = ["Account", "Name"]
+        cols = ["ACCOUNT", "SUBACCOUNT"]
         cols.extend([k for k in self.cat_dict])
         df = pd.DataFrame(columns=cols)
         for k, v in self.acc.items():
@@ -153,8 +154,8 @@ class FinContext:
 
     def account_from_df(self, df: pd.DataFrame):
         for index, row in df.iterrows():
-            acc_name = row["Account"]
-            sub_name = row["Name"]
+            acc_name = row["ACCOUNT"]
+            sub_name = row["SUBACCOUNT"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
@@ -206,22 +207,39 @@ class FinContext:
         self.write_config()
         self.clean_up_cat()
 
-    def query_date(self, date):
-        with self.fsql as s:
-            r = s.query_date(date)
-            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+    def query_date(self, date, use_pre_if_not_exist) -> pd.DataFrame:
+        if not use_pre_if_not_exist:
+            with self.fsql as s:
+                r = s.query_date(date)
+                df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+            return df
+
+        df = pd.DataFrame(columns=ASSET_TABLE.cols_name())
+        for acc in self.acc:
+            for sub in self.acc[acc].asset_list:
+                data = self.query_subacc_by_date(date, acc, sub.name, True)
+                df = pd.concat([df, data])
         return df
 
-    def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist):
+    def query_total_worth(self, date):
+        return self.query_date(date, True)["NET_WORTH"].sum()
+
+    def query_total_profit(self, date):
+        return self.query_date(date, True)["PROFIT"].sum()
+
+    def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist) -> pd.DataFrame:
+        with self.fsql as s:
+            r = s.query_subacc_by_date(date, acc, sub)
+            if len(r) > 0:
+                df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+                return df
+
         if use_pre_if_not_exist:
             return self.query_last_data(date, acc, sub)
 
-        with self.fsql as s:
-            r = s.query_subacc_by_date(date, acc, sub)
-            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
-        return df
+        return pd.DataFrame([], columns=ASSET_TABLE.cols_name())
 
-    def query_latest_data(self, acc_name, sub_name):
+    def query_latest_data(self, acc_name, sub_name) -> pd.DataFrame:
         with self.fsql as f:
             r = f.query_asset(acc_name, sub_name)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
@@ -229,38 +247,31 @@ class FinContext:
         row = df.iloc[[row_id]]
         return row
 
-    def query_last_data(self, date, acc, sub):
+    def query_last_data(self, date, acc, sub) -> pd.DataFrame:
         with self.fsql as f:
             r = f.query_asset(acc, sub)
             df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
 
+        if df[df["DATE"] < date].empty:
+            df = pd.DataFrame(columns=ASSET_TABLE.cols_name())
+            return df
+
         closest_row = df.iloc[[df[df["DATE"] < date]["DATE"].idxmax()]]
         return closest_row
 
-    def query_period_data(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
+    def query_period_data(self, start_date, end_date, cols=ASSET_TABLE.cols_name()) -> pd.DataFrame:
         with self.fsql as s:
             r = s.query_period_all(start_date, end_date)
             df = pd.DataFrame(r, columns=cols)
         return df
 
-    def query_period_data_by_acc_ass_list(self, start_date, end_date, acc_ass_list: list[tuple], cols=ASSET_TABLE.cols_name()):
+    def query_period_data_by_acc_ass_list(self, start_date, end_date, acc_ass_list: list[tuple], cols=ASSET_TABLE.cols_name()) -> pd.DataFrame:
         with self.fsql as s:
             r = s.query_period(start_date, end_date, acc_ass_list)
             df = pd.DataFrame(r, columns=cols)
         return df
 
-    # def query_period_data_by_cat(self, start_date, end_date, category, cols = ASSET_TABLE.cols_name()):
-    # with self.fsql as s:
-    # r = s.query_all_asset()
-    # df = pd.DataFrame(r, columns=cols)
-
-
-#
-# df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
-# df = df[["DATE", "SUBACCOUNT", "NET_WORTH"]]
-# return df
-
-    def get_date_range(self):
+    def get_date_range(self) -> tuple[str, str]:
         with self.fsql as f:
             r = f.query_col(["DATE"])
             df = pd.DataFrame(r, columns=["DATE"])
@@ -296,6 +307,7 @@ class FinContext:
             s.commit()
 
     def insert_or_update(self, date, acc, sub, net, inflow, profit):
+        date = fu.norm_date(date)
         if self.query_exist(date, acc, sub):
             self.update_data(date, acc, sub, net, inflow, profit)
         else:
@@ -324,13 +336,19 @@ class FinContext:
         acc.asset_list = [x for x in acc.asset_list if x.name != sub_name]
         self.write_config()
 
+    def verify_df(self, df: pd.DataFrame):
+        if df.columns.to_list() != ASSET_TABLE.cols_name():
+            col_str = ", ".join(ASSET_TABLE.cols_name())
+            return False, f"Your data format doesn't match requirment, required columns: [{col_str}]"
+        return True, ""
+
     def load_from_df(self, df: pd.DataFrame):
         print(df.columns.to_list())
         print(ASSET_TABLE.cols_name())
         assert (df.columns.to_list() == ASSET_TABLE.cols_name())
         for index, row in df.iterrows():
             print(row.to_list())
-            self.insert_asset(*row.to_list())
+            self.insert_or_update(*row.to_list())
 
     def get_all_data_csv(self):
         cols = ASSET_TABLE.cols_name()
@@ -369,14 +387,15 @@ class FinContext:
 
     def overview_area_chart(self):
         df = self.asset_table()
-        fig = px.area(df, x="DATE", y="NET_WORTH", color="SUBACCOUNT", line_group="ACCOUNT")
+        fig = px.area(df, x="DATE", y="NET_WORTH", color="ACCOUNT", line_group="SUBACCOUNT")
         return fig
 
     def allocation_pie(self, date=None):
         date = self.get_latest_date() if date is None else date
-        df = self.query_date(date)
+        df = self.query_date(date, True)
         df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Account Allocation")
+        fig = go.Figure(go.Pie(labels=df["SUBACCOUNT"], values=df["NET_WORTH"], textinfo='label+value+percent', showlegend=False))
+        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
         return fig
 
     def category_pie(self, cat: str, date: str = None):
@@ -394,21 +413,22 @@ class FinContext:
 
         # get the latest data
         date = self.get_latest_date() if date is None else date
-        df = self.query_date(date)
+        df = self.query_date(date, True)
         if cat not in self.cat_dict:
             FinLogger.exception(f"{cat} is not in category config")
 
         # remove invalid data
-        print(df)
         df = df[df.apply(is_valid_data, axis=1)]
-        print(df)
 
         # assign categories
         df[cat] = df.apply(assign_cat, axis=1)
 
         # generate chart
         df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
-        fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+
+        # fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+        fig = go.Figure(go.Pie(labels=df_sum[cat], values=df_sum["NET_WORTH"], textinfo='label+value+percent', showlegend=False))
+        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
         return fig
 
     def profit_waterfall(self, start_date, end_date):
