@@ -61,6 +61,10 @@ with st.sidebar:
                        mime="application/json")
     if st.button("Upload your accounts config", key="side_bar_upload_config_buttong"):
         load_acc_config_from_json_dia()
+    if st.button("Add account", type="primary", key="acc_add_asset"):
+        fw.add_account()
+    if st.button("Delete account", key="acc_delete_asset"):
+        fw.delete_account()
 
 # category
 cat_df = context.category_df()
@@ -86,8 +90,6 @@ st.subheader("Accounts")
 edit_on = st.toggle("Edit", key=st.session_state["acc_acc_toggle"])
 if not edit_on:
     st.table(context.account_df())
-    if st.button("Add asset", type="primary", key="acc_add_asset"):
-        fw.add_asset()
 else:
     col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
     account_df = context.account_df()

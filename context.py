@@ -220,8 +220,11 @@ class FinContext:
                 df = pd.concat([df, data])
         return df
 
-    def query_total_value(self, date):
+    def query_total_worth(self, date):
         return self.query_date(date, True)["NET_WORTH"].sum()
+
+    def query_total_profit(self, date):
+        return self.query_date(date, True)["PROFIT"].sum()
 
     def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist) -> pd.DataFrame:
         with self.fsql as s:
@@ -331,13 +334,19 @@ class FinContext:
         acc.asset_list = [x for x in acc.asset_list if x.name != sub_name]
         self.write_config()
 
+    def verify_df(self, df: pd.DataFrame):
+        if df.columns.to_list() != ASSET_TABLE.cols_name():
+            col_str = ", ".join(ASSET_TABLE.cols_name())
+            return False, f"Your data format doesn't match requirment, required columns: [{col_str}]"
+        return True, ""
+
     def load_from_df(self, df: pd.DataFrame):
         print(df.columns.to_list())
         print(ASSET_TABLE.cols_name())
         assert (df.columns.to_list() == ASSET_TABLE.cols_name())
         for index, row in df.iterrows():
             print(row.to_list())
-            self.insert_asset(*row.to_list())
+            self.insert_or_update(*row.to_list())
 
     def get_all_data_csv(self):
         cols = ASSET_TABLE.cols_name()
@@ -383,7 +392,8 @@ class FinContext:
         date = self.get_latest_date() if date is None else date
         df = self.query_date(date, True)
         df = FinContext.combine_acc_ass(df)
-        fig = px.pie(df, values="NET_WORTH", names="SUBACCOUNT", title=f"{date} Account Allocation")
+        fig = go.Figure(go.Pie(labels=df["SUBACCOUNT"], values=df["NET_WORTH"], textinfo='label+value+percent', showlegend=False))
+        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
         return fig
 
     def category_pie(self, cat: str, date: str = None):
@@ -406,16 +416,17 @@ class FinContext:
             FinLogger.exception(f"{cat} is not in category config")
 
         # remove invalid data
-        print(df)
         df = df[df.apply(is_valid_data, axis=1)]
-        print(df)
 
         # assign categories
         df[cat] = df.apply(assign_cat, axis=1)
 
         # generate chart
         df_sum = df.groupby(cat)["NET_WORTH"].sum().reset_index()
-        fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+
+        # fig = px.pie(df_sum, values="NET_WORTH", names=cat, title=f"{date} CATEGORY {cat} Distribution")
+        fig = go.Figure(go.Pie(labels=df_sum[cat], values=df_sum["NET_WORTH"], textinfo='label+value+percent', showlegend=False))
+        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
         return fig
 
     def profit_waterfall(self, start_date, end_date):

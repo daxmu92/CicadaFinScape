@@ -8,8 +8,8 @@ from context import FinContext
 import finutils as fu
 
 
-@st.experimental_dialog("New asset")
-def add_asset():
+@st.experimental_dialog("New Account")
+def add_account():
     context: FinContext = st.session_state['context']
     edit_on = st.toggle("New Account", key=st.session_state["acc_new_acc_toggle"])
     acc_name = ""
@@ -27,6 +27,16 @@ def add_asset():
     if st.button("Submit", on_click=FinContext.add_asset, args=(context, acc_name, sub_name, cats), type="primary", key="acc_new_acc_submit"):
         st.rerun()
 
+
+@st.experimental_dialog("Delete Account")
+def delete_account():
+    context: FinContext = st.session_state['context']
+    acc_name = st.selectbox("Select Account", [v.name for k, v in context.acc.items()])
+    sub_name = st.selectbox("Select Subaccount", [x.name for x in context.acc[acc_name].asset_list])
+
+    if st.button("DELETE", key="acc_delete_sub_acc_delete"):
+        context.delete_asset(acc_name, sub_name)
+        st.rerun()
 
 def editable_accounts(df=None, key=0, container_width=False):
     context: FinContext = st.session_state['context']
@@ -84,6 +94,11 @@ def load_from_csv_dia():
     upload_file = st.file_uploader("Choose a csv file")
     if upload_file is not None:
         data_df = pd.read_csv(upload_file)
+        valid, err_msg = context.verify_df(data_df)
+        if not valid:
+            st.error(err_msg)
+            st.stop()
+
         acc_df = None
         add_missing_acc = st.toggle("Add missing account/asset", value=True, key="load_csv_dia_toggle")
 
@@ -104,9 +119,11 @@ def load_from_csv_dia():
             cols = ["ACCOUNT", "SUBACCOUNT"]
             cols.extend([k for k in context.cat_dict])
 
-            acc_df = pd.DataFrame(columns=cols, data=acc_data)
-
-            acc_df = editable_accounts(acc_df, key="load_csv_acc_edit_df", container_width=True)
+            if acc_data:
+                acc_df = pd.DataFrame(columns=cols, data=acc_data)
+                acc_df = editable_accounts(acc_df, key="load_csv_acc_edit_df", container_width=True)
+            else:
+                st.info("You don't have any missing account in uploaded csv")
 
         if st.button("Submit", key="load_csv_submit", type="primary"):
             context.load_from_df(data_df)
@@ -223,3 +240,8 @@ def delete_selected_data_dia(acc_name, sub_name, date_list: list):
     with col2:
         if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
             st.rerun()
+
+
+def get_st_color_str_by_pos(value, pos_color="green", neg_color="red"):
+    color = f":{pos_color}-background" if value >= 0 else f":{neg_color}-background"
+    return color

@@ -335,8 +335,8 @@ class FinSQL:
         execute_str = f"UPDATE {ASSET_TABLE.name()} ({key_str}) VALUES ({value_str});"
         self.exec(execute_str)
 
-    def delete_asset(self, acc_name, name):
-        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
+    def delete_asset(self, acc, sub):
+        self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''')
         self.db.commit()
 
     def query_col(self, cols):

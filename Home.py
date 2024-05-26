@@ -7,7 +7,7 @@ from context import FinContext
 import fwidgets as fw
 import finutils as fu
 
-st.set_page_config(page_title="Cicada Financial Scape", page_icon="👋")
+st.set_page_config(page_title="Cicada Financial Scape", page_icon="👋", layout="wide")
 with st.sidebar:
     if st.button("Reset to Sample data", key="side_bar_reset_button"):
         fw.reset_sample_data_dia()
@@ -42,25 +42,39 @@ with st.sidebar:
         fw.clear_data_dia()
 
 cur_date = fu.norm_date(fu.cur_date())
-total_worth = context.query_total_value(cur_date)
-previous_date = fu.previous_date(cur_date)
-previous_worth = context.query_total_value(previous_date)
+s, e = context.get_date_range()
+date_list = fu.date_list(s, cur_date)
+selected_date = st.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed")
+
+total_worth = context.query_total_worth(selected_date)
+previous_date = fu.previous_date(selected_date)
+previous_worth = context.query_total_worth(previous_date)
 net_growth = total_worth - previous_worth
+total_profit = context.query_total_profit(selected_date)
+
+# col1, col2 = st.columns(2)
+# with col1:
+# st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")
+#
+# with col2:
+# growth_color = ":green-background" if net_growth >= 0 else ":red-background"
+# st.write(f"### Net growth: {growth_color}[{net_growth:,.1f}]")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")
-
+    allocation_pie = context.allocation_pie(selected_date)
+    st.plotly_chart(allocation_pie, theme="streamlit", use_container_width=True)
 with col2:
-    growth_color = ":green-background" if net_growth >= 0 else ":red-background"
-    st.write(f"### Net growth: {growth_color}[{net_growth:,.1f}]")
+    st.write("###  ")
+    st.write("###  ")
+    st.write("###  ")
+    st.write(f"### DATE: :grey-background[{selected_date}]")
+    st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")
+    st.write(f"### Net growth: {fw.get_st_color_str_by_pos(net_growth)}[{net_growth:,.1f}]")
+    st.write(f"### Profit: {fw.get_st_color_str_by_pos(total_profit)}[{total_profit:,.1f}]")
 
-overview_chart = context.overview_area_chart()
-st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
-
-allocation_pie = context.allocation_pie()
-st.write("#### Asset Allocation: ")
-st.plotly_chart(allocation_pie, theme="streamlit", use_container_width=True)
+# overview_chart = context.overview_area_chart()
+# st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
 
 cat_list = list(context.cat_dict.keys())
 st.write("### Category distribution: ")
