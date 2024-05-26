@@ -8,6 +8,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 from finsql import Account, AssetItem, FinSQL, ASSET_TABLE
+import finutils as fu
 from st_utils import FinLogger
 
 
@@ -144,7 +145,7 @@ class FinContext:
         return df
 
     def account_df(self):
-        cols = ["Account", "Sub-account"]
+        cols = ["ACCOUNT", "SUBACCOUNT"]
         cols.extend([k for k in self.cat_dict])
         df = pd.DataFrame(columns=cols)
         for k, v in self.acc.items():
@@ -153,8 +154,8 @@ class FinContext:
 
     def account_from_df(self, df: pd.DataFrame):
         for index, row in df.iterrows():
-            acc_name = row["Account"]
-            sub_name = row["Name"]
+            acc_name = row["ACCOUNT"]
+            sub_name = row["SUBACCOUNT"]
             if acc_name not in self.acc:
                 self.acc[acc_name] = Account(acc_name)
             acc = self.acc[acc_name]
@@ -306,6 +307,7 @@ class FinContext:
             s.commit()
 
     def insert_or_update(self, date, acc, sub, net, inflow, profit):
+        date = fu.norm_date(date)
         if self.query_exist(date, acc, sub):
             self.update_data(date, acc, sub, net, inflow, profit)
         else:

@@ -85,8 +85,8 @@ class AssetItem:
 
     def to_df(self):
         data = {
-            "Account": self.acc.name,
-            "Name": self.name,
+            "ACCOUNT": self.acc.name,
+            "SUBACCOUNT": self.name,
         }
         data.update(self.cats)
         data = {k: [v] for k, v in data.items()}
@@ -94,8 +94,8 @@ class AssetItem:
 
     def add_to_df(self, df: pd.DataFrame):
         data = {
-            "Account": self.acc.name,
-            "Sub-account": self.name,
+            "ACCOUNT": self.acc.name,
+            "SUBACCOUNT": self.name,
         }
         data.update(self.cats)
         data = [data[x] if x in data else None for x in df.columns]
@@ -269,6 +269,7 @@ class FinSQL:
         return results
 
     def query_data_exist(self, date, acc, sub):
+        date = fu.norm_date(date)
         results = self.query_subacc_by_date(date, acc, sub)
         return len(results) > 0
 
@@ -310,30 +311,6 @@ class FinSQL:
         cmd_str = f'''DELETE from {ASSET_TABLE.name()} {where_str}'''
         values = tuple(where_value)
         self.exec_value(cmd_str, values)
-
-    def modify_data(self, date, acc_name, name, data: dict):
-        insert_keys = []
-        insert_values = []
-        index_cols = ["DATE", "ACCOUNT", "NAMNE"]
-        update_cols = [x for x in ASSET_TABLE.ess_cols() if x.name not in index_cols]
-
-        for c in update_cols:
-            k = c.name
-            assert k in data, f"{k} is not in {data}"
-            insert_keys.append(k)
-            if c.type == "TEXT":
-                insert_values.append(f"'{data[k]}'")
-            else:
-                insert_values.append(str(data[k]))
-
-        for k in ASSET_TABLE.ex_cols():
-            if k in data:
-                insert_keys.append(data[k])
-
-        key_str = ', '.join(insert_keys)
-        value_str = ', '.join(insert_values)
-        execute_str = f"UPDATE {ASSET_TABLE.name()} ({key_str}) VALUES ({value_str});"
-        self.exec(execute_str)
 
     def delete_asset(self, acc, sub):
         self.exec(f'''DELETE FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''')

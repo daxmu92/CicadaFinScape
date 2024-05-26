@@ -4,6 +4,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
+from streamlit_extras.grid import grid
 from context import FinContext
 import finutils as fu
 
@@ -163,13 +164,15 @@ def net_inflow_profit_sync_input(last_net):
         return
 
     if st.toggle("Auto fill", value=True, key="ass_add_ass_record_toggle"):
-        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0", value=last_net, on_change=update, args=("input0",))
-        inflow = st.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1",))
-        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("input2",))
+        g = grid(3, vertical_align="bottom")
+        net = g.number_input("NET_WORTH", key="ass_add_ass_record_period_input0", value=last_net, on_change=update, args=("input0",))
+        inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1",))
+        profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("input2",))
     else:
-        net = st.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
-        inflow = st.number_input("INFLOW", key="ass_add_ass_record_period_input1")
-        profit = st.number_input("PROFIT", key="ass_add_ass_record_period_input2")
+        g = grid(3, vertical_align="bottom")
+        net = g.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
+        inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1")
+        profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2")
 
     return net, inflow, profit
 
