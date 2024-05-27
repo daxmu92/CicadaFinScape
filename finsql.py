@@ -188,7 +188,7 @@ class FinSQL:
         return True
 
     def empty(self, table):
-        return self.exec(f"SELECT COUNT(*) from {table}").fetchall() > 0
+        return self.exec(f"SELECT COUNT(*) from {table}").fetchone()[0] == 0
 
     def insert_asset(self, data: dict):
         insert_keys = []

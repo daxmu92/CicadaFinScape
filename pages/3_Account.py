@@ -15,9 +15,9 @@ st.set_page_config(page_title="Account")
 st.title("Account")
 st.divider()
 
-if fw.check_account():
+if not fw.check_account():
     st.stop()
-if fw.check_subaccount():
+if not fw.check_subaccount():
     st.stop()
 
 acc_name_list = context.acc_name_list()

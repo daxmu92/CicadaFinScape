@@ -16,9 +16,9 @@ st.title("Start a Cicada record journey")
 st.divider()
 context: FinContext = st.session_state['context']
 
-if fw.check_account():
+if not fw.check_account():
     st.stop()
-if fw.check_subaccount():
+if not fw.check_subaccount():
     st.stop()
 
 def clear_cicada_record_cache():

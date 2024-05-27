@@ -35,11 +35,11 @@ def check_database():
 
 
 def check_all():
-    if check_account():
+    if not check_account():
         st.stop()
-    if check_subaccount():
+    if not check_subaccount():
         st.stop()
-    if check_database():
+    if not check_database():
         st.stop()
 
 
