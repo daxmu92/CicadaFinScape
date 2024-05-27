@@ -32,6 +32,7 @@ def k_init_all():
         if key not in st.session_state:
             st.session_state[key] = f"{key}_0"
 
+
 k_init_all()
 
 st.set_page_config(page_title="Account Management",)

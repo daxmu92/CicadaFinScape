@@ -68,6 +68,12 @@ COL_INFLOW = SQLColDef("INFLOW", "REAL", "NOT NULL")
 COL_PROFIT = SQLColDef("PROFIT", "REAL", "NOT NULL")
 ASSET_TABLE = SQLTableDef("SUBACCOUNT", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_INFLOW, COL_PROFIT])
 
+COL_TRAN_ID = SQLColDef("ID", "INTEGER", "NOT NULL")
+COL_TRAN_TYPE = SQLColDef("TYPE", "TEXT", "NOT NULL")
+COL_TRAN_VALUE = SQLColDef("VALUE", "REAL", "NOT NULL")
+COL_TRAN_CAT = SQLColDef("CAT", "TEXT", "NOT NULL")
+COL_TRAN_NOTE = SQLColDef("NOTE", "TEXT", "NOT NULL")
+TRAN_TABLE = SQLTableDef("TRAN", [COL_TRAN_ID, COL_DATE, COL_TRAN_TYPE, COL_TRAN_VALUE, COL_TRAN_CAT, COL_TRAN_NOTE])
 
 class AssetItem:
 
@@ -129,13 +135,6 @@ class Account:
         asset = next(filter(lambda x: x.name == sub_name, self.asset_list), None)
         return asset
 
-
-class AssetTable:
-
-    def __init__(self, accounts: list[Account]):
-        self.accounts = accounts
-
-
 class FinSQL:
 
     def __init__(self, db_path: str):
@@ -168,32 +167,54 @@ class FinSQL:
             self.exec(f"DROP TABLE IF EXISTS {table[0]}")
         self.db.commit()
 
+    def clear_table(self, table: SQLTableDef):
+        self.exec(f'''DROP TABLE IF EXISTS {table.name()}''')
+        self.db.commit()
+
+    def clear_asset_table(self):
+        self.clear_table(ASSET_TABLE)
+
+    def clear_tran_table(self):
+        self.clear_table(TRAN_TABLE)
+
+    def create_asset_table(self):
+        self.exec(ASSET_TABLE.create_table_str())
+
+    def create_tran_table(self):
+        self.exec(TRAN_TABLE.create_table_str())
+
     def initial_db(self):
         tables = self._get_tables()
         if tables:
             print("db is not empty, can not initialize, please clear db first")
             return
-        self.exec(ASSET_TABLE.create_table_str())
+        self.create_asset_table()
+        self.create_tran_table()
         self.db.commit()
 
     def validate_db(self):
         tables = self._get_tables()
         for table in tables:
-            if not table[0] == ASSET_TABLE.name():
+            if table[0] not in [ASSET_TABLE.name(), TRAN_TABLE.name()]:
                 FinLogger.warn(f"Database contain unknown table {table[0]} !")
 
         if ASSET_TABLE.name() not in [x[0] for x in tables]:
+            FinLogger.warn(f"{ASSET_TABLE.name()} table is not in database")
+            return False
+
+        if TRAN_TABLE.name() not in [x[0] for x in tables]:
+            FinLogger.warn(f"{TRAN_TABLE.name()} table is not in database")
             return False
 
         return True
 
-    def empty(self, table):
-        return self.exec(f"SELECT COUNT(*) from {table}").fetchone()[0] == 0
+    def empty(self, table: SQLTableDef):
+        return self.exec(f"SELECT COUNT(*) FROM {table.name()}").fetchone()[0] == 0
 
-    def insert_asset(self, data: dict):
+    def insert_data(self, data, table: SQLTableDef):
         insert_keys = []
         insert_values = []
-        for c in ASSET_TABLE.ess_cols():
+        for c in table.ess_cols():
             k = c.name
             assert k in data, f"{k} is not in {data}"
             insert_keys.append(k)
@@ -203,18 +224,21 @@ class FinSQL:
                 insert_values.append(f"'{data[k]}'")
             else:
                 insert_values.append(str(data[k]))
-        for k in ASSET_TABLE.ex_cols():
+        for k in table.ex_cols():
             if k in data:
                 insert_keys.append(data[k])
         key_str = ', '.join(insert_keys)
         value_str = ', '.join(insert_values)
-        execute_str = f"INSERT INTO {ASSET_TABLE.name()} ({key_str}) VALUES ({value_str});"
+        execute_str = f"INSERT INTO {table.name()} ({key_str}) VALUES ({value_str});"
         self.exec(execute_str)
+
+    def insert_asset(self, data: dict):
+        self.insert_data(data, ASSET_TABLE)
 
     def commit(self):
         self.db.commit()
 
-    def cmd_filter_period(start_date, end_date):
+    def cmd_filter_period(start_date: str, end_date: str):
         date_str = f'''DATE BETWEEN "{start_date}" AND "{end_date}"'''
         return date_str
 
@@ -239,36 +263,42 @@ class FinSQL:
             self.insert_asset(insert_data)
         self.db.commit()
 
+    def query_max(self, col, table: SQLTableDef):
+        return self.exec(f'''SELECT MAX({col}) FROM {table.name()}''').fetchone()
+
+    def query_table_info(self, table: SQLTableDef):
+        return self.exec(f'''PRAGMA table_info({table.name()})''').fetchall()
+
     def query_asset(self, acc_name, name):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
+        results = self.exec(f'''SELECT * FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         return results
 
     def query_all_asset(self):
-        results = self.exec(f"SELECT * from {ASSET_TABLE.name()}").fetchall()
+        results = self.exec(f"SELECT * FROM {ASSET_TABLE.name()}").fetchall()
         return results
 
     def query_period(self, start_date, end_date, acc_ass_l: list[tuple], cols=ASSET_TABLE.cols_name()):
         col_str = ", ".join(cols)
-        date_str = f'''DATE BETWEEN "{start_date}" AND "{end_date}"'''
+        date_str = FinSQL.cmd_filter_period(start_date, end_date)
         filter_acc_ass_str = FinSQL.cmd_filter_acc_ass(len(acc_ass_l))
         where_str = f'''WHERE {date_str} AND {filter_acc_ass_str}'''
         values = acc_ass_l
-        results = self.exec_value(f'''SELECT {col_str} from {ASSET_TABLE.name()} {where_str}''', values).fetchall()
+        results = self.exec_value(f'''SELECT {col_str} FROM {ASSET_TABLE.name()} {where_str}''', values).fetchall()
         return results
 
     def query_period_all(self, start_date, end_date, cols=ASSET_TABLE.cols_name()):
         col_str = ", ".join(cols)
         date_str = FinSQL.cmd_filter_period(start_date, end_date)
         where_str = f'''WHERE {date_str}'''
-        results = self.exec(f'''SELECT {col_str} from {ASSET_TABLE.name()} {where_str}''').fetchall()
+        results = self.exec(f'''SELECT {col_str} FROM {ASSET_TABLE.name()} {where_str}''').fetchall()
         return results
 
     def query_date(self, date):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}"''').fetchall()
+        results = self.exec(f'''SELECT * FROM {ASSET_TABLE.name()} WHERE DATE = "{date}"''').fetchall()
         return results
 
     def query_subacc_by_date(self, date, acc, sub):
-        results = self.exec(f'''SELECT * from {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''').fetchall()
+        results = self.exec(f'''SELECT * FROM {ASSET_TABLE.name()} WHERE DATE = "{date}" and ACCOUNT = "{acc}" and SUBACCOUNT = "{sub}"''').fetchall()
         return results
 
     def query_data_exist(self, date, acc, sub):
@@ -311,7 +341,7 @@ class FinSQL:
             where_str += f"{k} = ?"
             where_value.append(v)
             i = i + 1
-        cmd_str = f'''DELETE from {ASSET_TABLE.name()} {where_str}'''
+        cmd_str = f'''DELETE FROM {ASSET_TABLE.name()} {where_str}'''
         values = tuple(where_value)
         self.exec_value(cmd_str, values)
 
@@ -321,5 +351,25 @@ class FinSQL:
 
     def query_col(self, cols):
         col_str = ", ".join(cols)
-        results = self.exec(f'''SELECT {col_str} from {ASSET_TABLE.name()}''').fetchall()
+        results = self.exec(f'''SELECT {col_str} FROM {ASSET_TABLE.name()}''').fetchall()
         return results
+
+    def insert_tran(self, data):
+        return self.insert_data(data, TRAN_TABLE)
+
+    def query_tran_by_id(self, id):
+        return self.exec(f'''SELECT * FROM {TRAN_TABLE.name()} WHERE {COL_TRAN_ID.name} = {id}''').fetchall()
+
+    def delete_tran_by_id(self, id):
+        return self.exec(f'''DELETE FROM {TRAN_TABLE.name()} WHERE {COL_TRAN_ID.name} = {id}''')
+
+    def query_tran_all(self):
+        return self.exec(f'''SELECT * FROM {TRAN_TABLE.name()}''').fetchall()
+
+    def query_tran_by_date(self, date):
+        return self.exec(f'''SELECT * FROM {TRAN_TABLE.name()} WHERE {COL_DATE.name} = {date}''').fetchall()
+
+    def query_new_tran_id(self) -> int:
+        if self.empty(TRAN_TABLE):
+            return 0
+        return int(self.query_max(COL_TRAN_ID.name, TRAN_TABLE)) + 1

@@ -25,7 +25,7 @@ def norm_date(date):
     return p.strftime("%Y-%m")
 
 
-def previous_date(date: str) -> str:
+def prev_date(date: str) -> str:
     p = pd.Period(date, freq='M')
     p = p - 1
     return p.strftime("%Y-%m")

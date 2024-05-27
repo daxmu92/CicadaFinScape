@@ -7,7 +7,7 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
-from finsql import Account, AssetItem, FinSQL, ASSET_TABLE
+from finsql import *
 import finutils as fu
 from st_utils import FinLogger
 
@@ -22,6 +22,7 @@ class FinContext:
         self.cat_dict: dict[str, list[str]] = {}
         self.acc: dict[str, Account] = {}
         self.load_config_file(config_path)
+        self.tran_id = 0
 
     def validate_db(self):
         with self.fsql as s:
@@ -29,7 +30,7 @@ class FinContext:
 
     def db_empty(self):
         with self.fsql as s:
-            return s.empty(ASSET_TABLE.name())
+            return s.empty(ASSET_TABLE)
 
     def clear_config(self):
         self.config = {}
@@ -127,6 +128,18 @@ class FinContext:
             s.clear_db()
             s.initial_db()
 
+    def reset_asset_table(self):
+        with self.fsql as s:
+            s.clear_asset_table()
+            s.create_asset_table()
+            s.commit()
+
+    def reset_tran_table(self):
+        with self.fsql as s:
+            s.clear_tran_table()
+            s.create_tran_table()
+            s.commit()
+
     def load_from_csv(self, csv_path):
         with self.fsql as s:
             s.load_from_csv(csv_path)
@@ -210,6 +223,10 @@ class FinContext:
         self.cat_dict = cat_dict
         self.write_config()
         self.clean_up_cat()
+
+    def query_table_info(self, table):
+        with self.fsql as s:
+            return s.query_table_info(table)
 
     def query_date(self, date, use_pre_if_not_exist) -> pd.DataFrame:
         if not use_pre_if_not_exist:
@@ -345,6 +362,56 @@ class FinContext:
             col_str = ", ".join(ASSET_TABLE.cols_name())
             return False, f"Your data format doesn't match requirment, required columns: [{col_str}]"
         return True, ""
+
+    def insert_tran(self, date, type, value, cat, note):
+        new_id = self.tran_id
+        data = {
+            COL_TRAN_ID.name: new_id,
+            COL_DATE.name: date,
+            COL_TRAN_TYPE.name: type,
+            COL_TRAN_VALUE.name: value,
+            COL_TRAN_CAT.name: cat,
+            COL_TRAN_NOTE.name: note
+        }
+        with self.fsql as s:
+            try:
+                s.insert_tran(data)
+            except:
+                new_id = s.query_new_tran_id()
+                data[COL_TRAN_ID.name] = new_id
+                s.insert_tran(data)
+            s.commit()
+        self.tran_id = new_id + 1
+
+    def delete_tran(self, id):
+        with self.fsql as s:
+            s.delete_tran_by_id(id)
+            s.commit()
+
+    def query_tran_all(self) -> pd.DataFrame:
+        with self.fsql as s:
+            r = s.query_tran_all()
+            df = pd.DataFrame(r, columns=TRAN_TABLE.cols_name())
+        return df
+
+    def query_tran_by_date(self, date) -> pd.DataFrame:
+        with self.fsql as s:
+            r = s.query_tran_by_date(date)
+            df = pd.DataFrame(r, columns=TRAN_TABLE.cols_name())
+        return df
+
+    def df_to_tran(self, df: pd.DataFrame):
+        self.reset_tran_table()
+        new_id = self.tran_id
+        with self.fsql as s:
+            for index, row in df.iterrows():
+                new_id = s.query_new_tran_id()
+                data = {c: row[c] for c in TRAN_TABLE.cols_name() if c != COL_TRAN_ID.name}
+                data[COL_TRAN_ID.name] = new_id
+                s.insert_tran(data)
+                new_id += 1
+            s.commit()
+        self.tran_id = new_id + 1
 
     def load_from_df(self, df: pd.DataFrame):
         print(df.columns.to_list())

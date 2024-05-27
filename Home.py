@@ -49,28 +49,26 @@ with st.sidebar:
 fw.check_all()
 
 cur_date = fu.norm_date(fu.cur_date())
-s, e = context.get_date_range()
-date_list = fu.date_list(s, cur_date)
-
-g = grid([12, 1, 1])
-
-
+date_list = fw.get_date_list()
+g: st = grid([12, 1, 1])
 def update_selected_date(previous):
+    print(previous)
     if previous:
-        st.info("111")
-        st.session_state["home_select_date_slider"] = fu.previous_date(st.session_state["home_select_date_slider"])
+        prev = fu.prev_date(st.session_state["home_select_date_slider"])
+        if prev in date_list:
+            st.session_state["home_select_date_slider"] = prev
     else:
-        st.info("222")
-        st.session_state["home_select_date_slider"] = fu.next_date(st.session_state["home_select_date_slider"])
-
+        next = fu.next_date(st.session_state["home_select_date_slider"])
+        if next in date_list:
+            st.session_state["home_select_date_slider"] = next
 
 selected_date = g.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed", key="home_select_date_slider")
 g.button("<", use_container_width=True, key="home_select_date_slider_previous_button", on_click=update_selected_date, args=(True,))
 g.button("\>", use_container_width=True, key="home_select_date_slider_next_button", on_click=update_selected_date, args=(False,))
 
 total_worth = context.query_total_worth(selected_date)
-previous_date = fu.previous_date(selected_date)
-previous_worth = context.query_total_worth(previous_date)
+prev_date = fu.prev_date(selected_date)
+previous_worth = context.query_total_worth(prev_date)
 net_growth = total_worth - previous_worth
 total_profit = context.query_total_profit(selected_date)
 

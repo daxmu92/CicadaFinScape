@@ -15,11 +15,13 @@ st.set_page_config(page_title="New record journey",)
 st.title("Start a Cicada record journey")
 st.divider()
 context: FinContext = st.session_state['context']
+acc_name_list = context.acc_name_list()
 
 if not fw.check_account():
     st.stop()
 if not fw.check_subaccount():
     st.stop()
+
 
 def clear_cicada_record_cache():
     st.session_state.pop("cicada_record_journey_date", None)

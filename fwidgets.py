@@ -6,6 +6,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 from streamlit_extras.grid import grid
 from context import FinContext
+import finsql
 import finutils as fu
 
 
@@ -267,18 +268,67 @@ def delete_selected_data_dia(acc_name, sub_name, date_list: list):
     date_list_str = ", ".join(date_list)
     st.write(f"Date will be removed: {date_list_str}")
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2 = st.columns(2)
     with col1:
-        if st.button("DELETE", key="delete_dialog_delete"):
+        if st.button("DELETE", key="delete_dialog_delete", use_container_width=True):
             for date in date_list:
                 context.delete_data(date, acc_name, sub_name)
             st.rerun()
 
     with col2:
-        if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
+        if st.button("Cancel", key="delete_dialog_cancel", type="primary", use_container_width=True):
             st.rerun()
 
 
 def get_st_color_str_by_pos(value, pos_color="green", neg_color="red"):
     color = f":{pos_color}-background" if value >= 0 else f":{neg_color}-background"
     return color
+
+
+@st.experimental_dialog("ADD A MONEY FLOW")
+def add_money_flow_dia():
+    context: FinContext = st.session_state["context"]
+    date = year_month_selector()
+    tran_type = st.selectbox("Type", ["Income", "Outlay"], key="add_money_flow_type_input")
+    value = st.number_input("Value", key="add_money_flow_number_input")
+    cat = st.text_input("Category", key="add_money_flow_cat_input")
+    note = st.text_input("Note", key="add_money_flow_note_input")
+    if st.button("Submit"):
+        context.insert_tran(date, tran_type, value, "", note)
+        st.rerun()
+
+
+@st.experimental_dialog("Confirm")
+def confirm_dia(func, args, info):
+    st.warning(info)
+    if st.button("Confirm", key="confirm_dia_button"):
+        func(*args)
+        st.rerun()
+
+
+@st.experimental_dialog("Delete selected money flow record")
+def delete_selected_money_flow_dia(id_list: list[int]):
+    context: FinContext = st.session_state["context"]
+    st.warning("**You are DELETING your money flow record:**")
+    df = context.query_tran_all()
+    df = df[df[finsql.COL_TRAN_ID.name].isin(id_list)]
+    st.table(df)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("DELETE", key="delete_money_flow_dialog_delete", use_container_width=True):
+            for id in id_list:
+                context.delete_tran(id)
+            st.rerun()
+
+    with col2:
+        if st.button("Cancel", key="delete_money_flow_dialog_cancel", type="primary", use_container_width=True):
+            st.rerun()
+
+
+def get_date_list():
+    context: FinContext = st.session_state["context"]
+    cur_date = fu.norm_date(fu.cur_date())
+    s, e = context.get_date_range()
+    date_list = fu.date_list(s, max(cur_date, e))
+    return date_list
