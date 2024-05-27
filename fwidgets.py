@@ -9,6 +9,40 @@ from context import FinContext
 import finutils as fu
 
 
+def check_account():
+    context: FinContext = st.session_state['context']
+    if not context.acc:
+        st.warning("You don't have any account, go to Account management page to create one")
+        return False
+    return True
+
+
+def check_subaccount():
+    context: FinContext = st.session_state['context']
+    for acc in context.acc:
+        if len(context.acc[acc].asset_list) == 0:
+            st.warning(f"You don't have any subaccount under {acc}, go to Account management page to create one")
+            return False
+    return True
+
+
+def check_database():
+    context: FinContext = st.session_state['context']
+    if context.db_empty():
+        st.warning(f"You don't have any data record, go to Account/Cicada journey page to add record")
+        return False
+    return True
+
+
+def check_all():
+    if check_account():
+        st.stop()
+    if check_subaccount():
+        st.stop()
+    if check_database():
+        st.stop()
+
+
 @st.experimental_dialog("New Account")
 def add_account():
     context: FinContext = st.session_state['context']

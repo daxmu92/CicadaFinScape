@@ -16,11 +16,10 @@ st.title("Start a Cicada record journey")
 st.divider()
 context: FinContext = st.session_state['context']
 
-acc_name_list = context.acc_name_list()
-if len(acc_name_list) == 0:
-    st.info("You don't have any account, go to account management page to create")
+if fw.check_account():
     st.stop()
-
+if fw.check_subaccount():
+    st.stop()
 
 def clear_cicada_record_cache():
     st.session_state.pop("cicada_record_journey_date", None)

@@ -13,6 +13,8 @@ st.set_page_config(page_title="Profit and Loss")
 st.title("Profit and Loss")
 st.divider()
 
+fw.check_all()
+
 s, e = context.get_date_range()
 date_list = fu.date_list(s, e)
 start_date, end_date = st.select_slider("Select a period", options=date_list, value=(s, e))

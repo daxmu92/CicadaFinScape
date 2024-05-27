@@ -8,7 +8,7 @@ from context import FinContext
 import fwidgets as fw
 import finutils as fu
 
-st.set_page_config(page_title="Cicada Financial Scape", page_icon="👋", layout="wide")
+st.set_page_config(page_title="Cicada Financial Scape", page_icon=":clipboard:", layout="wide")
 with st.sidebar:
     if st.button("Reset to Sample data", key="side_bar_reset_button", use_container_width=True):
         fw.reset_sample_data_dia()
@@ -45,6 +45,8 @@ with st.sidebar:
                        use_container_width=True)
     if st.button("Clear Data", use_container_width=True):
         fw.clear_data_dia()
+
+fw.check_all()
 
 cur_date = fu.norm_date(fu.cur_date())
 s, e = context.get_date_range()
