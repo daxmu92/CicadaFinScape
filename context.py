@@ -27,6 +27,10 @@ class FinContext:
         with self.fsql as s:
             return s.validate_db()
 
+    def db_empty(self):
+        with self.fsql as s:
+            return s.empty(ASSET_TABLE.name())
+
     def clear_config(self):
         self.config = {}
         self.cat_dict = {}
