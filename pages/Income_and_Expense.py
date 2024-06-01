@@ -4,10 +4,10 @@ import sys
 from streamlit_extras.grid import grid
 
 sys.path.append("..")
-import finsql as finsql
-from context import FinContext
-import fwidgets as fw
-import finutils as fu
+import src.finsql as finsql
+from src.context import FinContext
+import src.fwidgets as fw
+import src.finutils as fu
 
 context: FinContext = st.session_state['context']
 

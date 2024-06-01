@@ -5,11 +5,11 @@ from streamlit_extras.grid import grid
 
 sys.path.append("..")
 
-from context import FinContext
-from finsql import ASSET_TABLE
-from st_utils import FinLogger
-import fwidgets as fw
-import finutils as fu
+from src.context import FinContext
+from src.finsql import ASSET_TABLE
+from src.st_utils import FinLogger
+import src.fwidgets as fw
+import src.finutils as fu
 
 st.set_page_config(page_title="New record journey",)
 st.title("Start a Cicada record journey")

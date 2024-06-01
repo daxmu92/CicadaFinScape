@@ -1,13 +1,14 @@
 import streamlit as st
 import warnings
+import json
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 from streamlit_extras.grid import grid
-from context import FinContext
-import finsql
-import finutils as fu
+from src.context import FinContext
+import src.finsql
+import src.finutils as fu
 
 
 def check_account():
@@ -332,3 +333,18 @@ def get_date_list():
     s, e = context.get_date_range()
     date_list = fu.date_list(s, max(cur_date, e))
     return date_list
+
+
+@st.experimental_dialog("Load Accounts config from json file")
+def load_acc_config_from_json_dia():
+    context: FinContext = st.session_state["context"]
+    upload_file = st.file_uploader("Choose a json file")
+    if upload_file is not None:
+        config = json.load(upload_file)
+        if st.button("Submit", key="load_config_from_json_submit", type="primary"):
+            context.load_config(config)
+            context.write_config()
+            st.rerun()
+        st.json(config, expanded=True)
+    else:
+        st.warning("You need to upload a config json file")

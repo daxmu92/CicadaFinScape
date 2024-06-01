@@ -7,9 +7,9 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
-from finsql import *
-import finutils as fu
-from st_utils import FinLogger
+from src.finsql import *
+import src.finutils as fu
+from src.st_utils import FinLogger
 
 
 class FinContext:
@@ -590,7 +590,7 @@ class FinContext:
 
         curr_path = __file__
         curr_dir = os.path.dirname(curr_path)
-        config_path = os.path.join(curr_dir, "sample_config.json")
+        config_path = os.path.join(curr_dir, "samples").join("sample_config.json")
         self.load_config_file(config_path)
         self.write_config()
 

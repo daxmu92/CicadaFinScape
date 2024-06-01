@@ -3,9 +3,9 @@ import sys
 import pandas as pd
 
 sys.path.append("..")
-from context import FinContext
-import fwidgets as fw
-import finutils as fu
+from src.context import FinContext
+import src.fwidgets as fw
+import src.finutils as fu
 
 context: FinContext = st.session_state['context']
 

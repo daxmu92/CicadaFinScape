@@ -1,7 +1,7 @@
 import streamlit as st
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from context import FinContext
+    from src.context import FinContext
 
 class FinLogger:
 

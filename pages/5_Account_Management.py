@@ -5,9 +5,9 @@ import re
 import json
 
 sys.path.append("..")
-from context import FinContext
-import fwidgets as fw
-import finutils as fu
+from src.context import FinContext
+import src.fwidgets as fw
+import src.finutils as fu
 
 context: FinContext = st.session_state['context']
 
@@ -41,28 +41,8 @@ st.divider()
 st.subheader("Account Categories")
 
 
-@st.experimental_dialog("Load Accounts config from json file")
-def load_acc_config_from_json_dia():
-    upload_file = st.file_uploader("Choose a json file")
-    if upload_file is not None:
-        config = json.load(upload_file)
-        if st.button("Submit", key="load_config_from_json_submit", type="primary"):
-            context.load_config(config)
-            context.write_config()
-            st.rerun()
-        st.json(config, expanded=True)
-    else:
-        st.warning("You need to upload a config json file")
-
 
 with st.sidebar:
-    st.download_button("Download your accounts config",
-                       data=context.config_json(),
-                       file_name=f"cfs-accounts-config-{fu.cur_date()}.json",
-                       mime="application/json",
-                       use_container_width=True)
-    if st.button("Upload your accounts config", key="side_bar_upload_config_buttong", use_container_width=True):
-        load_acc_config_from_json_dia()
     if st.button("Add account", type="primary", key="acc_add_asset", use_container_width=True):
         fw.add_account()
     if st.button("Delete account", key="acc_delete_asset", use_container_width=True):

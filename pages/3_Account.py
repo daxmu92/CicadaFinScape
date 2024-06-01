@@ -4,14 +4,14 @@ import pandas as pd
 import sys
 
 sys.path.append("..")
-from context import FinContext
-from finsql import ASSET_TABLE
-import fwidgets as fw
-import finutils as fu
+from src.context import FinContext
+from src.finsql import ASSET_TABLE
+import src.fwidgets as fw
+import src.finutils as fu
 
 context: FinContext = st.session_state['context']
 
-st.set_page_config(page_title="Account")
+st.set_page_config(page_title="Account", layout="wide")
 st.title("Account")
 st.divider()
 
@@ -21,7 +21,18 @@ if not fw.check_subaccount():
     st.stop()
 
 acc_name_list = context.acc_name_list()
-tabs = st.tabs(acc_name_list)
+bold_acc_name_list = [f"**{x}**" for x in acc_name_list]
+tabs = st.tabs(bold_acc_name_list)
+
+tab_css = '''
+<style>
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+    font-size:1.2rem;
+    }
+</style>
+'''
+st.markdown(tab_css, unsafe_allow_html=True)
+
 for index, tab in enumerate(tabs):
     with tab:
         acc_name = acc_name_list[index]

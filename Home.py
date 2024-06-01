@@ -3,18 +3,12 @@ import pandas as pd
 import streamlit as st
 from streamlit_extras.grid import grid
 
-import finsql as finsql
-from context import FinContext
-import fwidgets as fw
-import finutils as fu
+import src.finsql as finsql
+from src.context import FinContext
+import src.fwidgets as fw
+import src.finutils as fu
 
 st.set_page_config(page_title="Cicada Financial Scape", page_icon=":clipboard:", layout="wide")
-with st.sidebar:
-    if st.button("Reset to Sample data", key="side_bar_reset_button", use_container_width=True):
-        fw.reset_sample_data_dia()
-    if st.button("Upload csv file", key="side_bar_load_from_csv", use_container_width=True):
-        fw.load_from_csv_dia()
-
 curr_path = __file__
 curr_dir = os.path.dirname(curr_path)
 data_dir = os.path.join(curr_dir, "data")
@@ -36,15 +30,6 @@ st.divider()
 if not context.validate_db():
     fw.init_db()
     st.stop()
-
-with st.sidebar:
-    st.download_button(label="Download your data",
-                       data=context.get_all_data_csv(),
-                       file_name=f"cfs-data-{fu.cur_date()}.txt",
-                       mime="text/csv",
-                       use_container_width=True)
-    if st.button("Clear Data", use_container_width=True):
-        fw.clear_data_dia()
 
 fw.check_all()
 

@@ -3,8 +3,8 @@ import sqlite3
 import copy
 import csv
 import pandas as pd
-from st_utils import FinLogger
-import finutils as fu
+from src.st_utils import FinLogger
+import src.finutils as fu
 
 
 class SQLColDef:
