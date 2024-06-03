@@ -16,11 +16,11 @@ st.title("Income and Expense")
 st.divider()
 
 tran_df = context.query_tran_all()
-
 enable_edit = st.toggle("Edit", False, key="income_and_expense_toggle")
 if enable_edit:
     col_configs = {k: st.column_config.TextColumn(k, disabled=False) for k in tran_df.columns}
-    col_configs[finsql.COL_TRAN_TYPE.name] = st.column_config.SelectboxColumn(finsql.COL_TRAN_TYPE.name, options=["Income", "Outlay"])
+    col_configs[finsql.COL_TRAN_TYPE.name] = st.column_config.SelectboxColumn(finsql.COL_TRAN_TYPE.name,
+                                                                              options=[finsql.TRAN_INCOME_NAME, finsql.TRAN_OUTLAY_NAME])
     col_configs[finsql.COL_DATE.name] = st.column_config.SelectboxColumn(finsql.COL_DATE.name, options=fw.get_date_list(), required=True)
     col_configs[finsql.COL_TRAN_ID.name] = st.column_config.TextColumn(disabled=True)
     col_configs[finsql.COL_TRAN_VALUE.name] = st.column_config.NumberColumn(required=True)
@@ -49,3 +49,6 @@ else:
     with cols[1]:
         if st.button("**Delet selected record**", key="delete_money_flow_button", use_container_width=True):
             fw.delete_selected_money_flow_dia(id_list)
+
+io_df = context.income_outlay_df()
+st.table(io_df)

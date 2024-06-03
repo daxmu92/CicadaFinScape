@@ -7,6 +7,7 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+from pathlib import Path
 from src.finsql import *
 import src.finutils as fu
 from src.st_utils import FinLogger
@@ -248,6 +249,9 @@ class FinContext:
     def query_total_profit(self, date):
         return self.query_date(date, True)["PROFIT"].sum()
 
+    def query_total_inflow(self, date):
+        return self.query_date(date, True)[COL_INFLOW.name].sum()
+
     def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist) -> pd.DataFrame:
         with self.fsql as s:
             r = s.query_subacc_by_date(date, acc, sub)
@@ -296,8 +300,8 @@ class FinContext:
         with self.fsql as f:
             r = f.query_col(["DATE"])
             df = pd.DataFrame(r, columns=["DATE"])
-        earliest = df["DATE"].min()
         latest = df["DATE"].max()
+        earliest = df["DATE"].min()
         return earliest, latest
 
     def get_latest_date(self):
@@ -412,6 +416,20 @@ class FinContext:
                 new_id += 1
             s.commit()
         self.tran_id = new_id + 1
+
+    def income_outlay_df(self) -> pd.DataFrame:
+        with self.fsql as s:
+            r = s.query_all_asset()
+            df = pd.DataFrame(r, columns=ASSET_TABLE.cols_name())
+        inflow_df = df[[COL_DATE.name, COL_INFLOW.name]]
+        inflow_df = inflow_df.groupby(COL_DATE.name).sum().reset_index()
+        tran_df = self.query_tran_all()
+        income_df = tran_df[tran_df[COL_TRAN_TYPE.name] == TRAN_INCOME_NAME].groupby(COL_DATE.name).sum().reset_index()
+        income_df = income_df[[COL_DATE.name, COL_TRAN_VALUE.name]]
+        io_df = pd.merge(inflow_df, income_df, on=COL_DATE.name, how="left")
+        io_df[TRAN_INCOME_NAME] = io_df[COL_TRAN_VALUE.name].fillna(0)
+        io_df[TRAN_OUTLAY_NAME] = io_df[TRAN_INCOME_NAME] - io_df[COL_INFLOW.name]
+        return io_df[[COL_DATE.name, COL_INFLOW.name, TRAN_INCOME_NAME, TRAN_OUTLAY_NAME]]
 
     def load_from_df(self, df: pd.DataFrame):
         print(df.columns.to_list())
@@ -590,7 +608,9 @@ class FinContext:
 
         curr_path = __file__
         curr_dir = os.path.dirname(curr_path)
-        config_path = os.path.join(curr_dir, "samples").join("sample_config.json")
+        root_dir = str(Path(curr_dir).parent)
+        sample_path = ["samples", "sample_config.json"]
+        config_path = os.path.join(root_dir, *sample_path)
         self.load_config_file(config_path)
         self.write_config()
 
@@ -598,7 +618,9 @@ class FinContext:
             s.clear_db()
             s.initial_db()
 
-        period_range = pd.period_range(start="3/1/2020", end="2/1/2024", freq='M')
+        start = fu.norm_date("2020-3")
+        end = max(fu.norm_date(fu.cur_date()), fu.norm_date("2024-2"))
+        period_range = pd.period_range(start=start, end=end, freq='M')
         with self.fsql as s:
             seed = 0
             for k, v in self.acc.items():

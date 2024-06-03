@@ -7,7 +7,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 from streamlit_extras.grid import grid
 from src.context import FinContext
-import src.finsql
+import src.finsql as finsql
 import src.finutils as fu
 
 
@@ -290,12 +290,12 @@ def get_st_color_str_by_pos(value, pos_color="green", neg_color="red"):
 def add_money_flow_dia():
     context: FinContext = st.session_state["context"]
     date = year_month_selector()
-    tran_type = st.selectbox("Type", ["Income", "Outlay"], key="add_money_flow_type_input")
+    tran_type = st.selectbox("Type", [finsql.TRAN_INCOME_NAME, finsql.TRAN_OUTLAY_NAME], key="add_money_flow_type_input")
     value = st.number_input("Value", key="add_money_flow_number_input")
     cat = st.text_input("Category", key="add_money_flow_cat_input")
     note = st.text_input("Note", key="add_money_flow_note_input")
     if st.button("Submit"):
-        context.insert_tran(date, tran_type, value, "", note)
+        context.insert_tran(date, tran_type, value, cat, note)
         st.rerun()
 
 
