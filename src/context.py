@@ -241,10 +241,14 @@ class FinContext:
         return self.query_date(date, True)["NET_WORTH"].sum()
 
     def query_total_profit(self, date):
-        return self.query_date(date, True)["PROFIT"].sum()
+        df = self.query_date(date, True)
+        df.loc[df[COL_DATE.name] != date, COL_PROFIT.name] = 0
+        return df[COL_PROFIT.name].sum()
 
     def query_total_inflow(self, date):
-        return self.query_date(date, True)[COL_INFLOW.name].sum()
+        df = self.query_date(date, True)
+        df.loc[df[COL_DATE.name] != date, COL_INFLOW.name] = 0
+        return df[COL_INFLOW.name].sum()
 
     def query_subacc_by_date(self, date, acc, sub, use_pre_if_not_exist) -> pd.DataFrame:
         with self.fsql as s:

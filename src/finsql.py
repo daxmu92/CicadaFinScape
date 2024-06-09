@@ -281,7 +281,7 @@ class FinSQL:
         return results
 
     def query_all_asset(self):
-        return self.query_all(self, ASSET_TABLE)
+        return self.query_all(ASSET_TABLE)
 
     def query_period(self, start_date, end_date, acc_ass_l: list[tuple], cols=ASSET_TABLE.cols_name()):
         col_str = ", ".join(cols)
