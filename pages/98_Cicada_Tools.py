@@ -32,22 +32,36 @@ if g_reset.button("**Reset to Sample data**", key="side_bar_reset_button", use_c
     fw.reset_sample_data_dia()
 
 st.write("#### Download/Upload your data")
-g_file: st = grid(2, 2, vertical_align="bottom")
-g_file.download_button(label="**Download your data**",
-                       data=context.get_all_data_csv(),
-                       file_name=f"cfs-data-{fu.cur_date()}.txt",
-                       mime="text/csv",
-                       use_container_width=True)
-if g_file.button("**Upload csv file**", key="side_bar_load_from_csv", use_container_width=True):
-    fw.load_from_csv_dia()
+g_file: st = grid(1, [1, 1], vertical_align="bottom")
+select_list = ["All(zip)", "Asset data", "Money flow", "Account config"]
+selected = g_file.selectbox("Select data you want to download", select_list, key="cicada_tool_select_download_data")
 
-g_file.download_button("**Download your accounts config**",
-                       data=context.config_json(),
-                       file_name=f"cfs-accounts-config-{fu.cur_date()}.json",
-                       mime="application/json",
-                       use_container_width=True)
-if g_file.button("**Upload your accounts config**", key="side_bar_upload_config_buttong", use_container_width=True):
-    fw.load_acc_config_from_json_dia()
+if selected == select_list[0]:
+    selected_data = context.get_zip_data()
+    file_name = f"cfs-data-{fu.cur_date()}.zip"
+    mime = None
+elif selected == select_list[1]:
+    selected_data = context.get_data_csv(finsql.ASSET_TABLE)
+    file_name = f"cfs-asset-data-{fu.cur_date()}.txt"
+    mime = "text/csv"
+elif selected == select_list[2]:
+    selected_data = context.get_data_csv(finsql.TRAN_TABLE)
+    file_name = f"cfs-tran-data-{fu.cur_date()}.txt"
+    mime = "text/csv"
+elif selected == select_list[3]:
+    selected_data = context.config_json()
+    file_name = f"cfs-account-config-{fu.cur_date()}.json"
+    mime = "application/json"
+
+g_file.download_button(label="**Download your data**", data=selected_data, file_name=file_name, mime=mime, type="primary", use_container_width=True)
+
+load_dias = [fw.load_from_zipped_dia, fw.load_from_csv_dia, None, None]
+if g_file.button("**Upload your file**", key="upload files", use_container_width=True):
+    dia = load_dias[select_list.index(selected)]
+    if dia is None:
+        fw.unsupported_dia(f"Upload {selected}")
+    else:
+        dia()
 
 st.write("#### Query table attributes")
 g_query_table: st = grid(2, vertical_align="bottom")

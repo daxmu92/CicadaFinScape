@@ -26,3 +26,10 @@ class FinLogger:
             print(s)
             e = RuntimeError(s)
             return st.exception(e)
+
+    def expect_and_stop(b, s=""):
+        if not b:
+            print(s)
+            e = RuntimeError(s)
+            st.exception(e)
+            st.stop()

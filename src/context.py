@@ -1,5 +1,7 @@
 import json
 import os
+import io
+import zipfile
 import copy
 import csv
 import pandas as pd
@@ -140,14 +142,6 @@ class FinContext:
             s.clear_tran_table()
             s.create_tran_table()
             s.commit()
-
-    def load_from_csv(self, csv_path):
-        with self.fsql as s:
-            s.load_from_csv(csv_path)
-
-    def init_db_from_csv(self, csv_path):
-        self.init_db()
-        self.load_from_csv(csv_path)
 
     def combine_acc_ass(df):
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
@@ -431,20 +425,57 @@ class FinContext:
         io_df[TRAN_OUTLAY_NAME] = io_df[TRAN_INCOME_NAME] - io_df[COL_INFLOW.name]
         return io_df[[COL_DATE.name, COL_INFLOW.name, TRAN_INCOME_NAME, TRAN_OUTLAY_NAME]]
 
-    def load_from_df(self, df: pd.DataFrame):
-        print(df.columns.to_list())
-        print(ASSET_TABLE.cols_name())
-        assert (df.columns.to_list() == ASSET_TABLE.cols_name())
-        for index, row in df.iterrows():
-            print(row.to_list())
-            self.insert_or_update(*row.to_list())
+    def load_from_df(self, df: pd.DataFrame, table: SQLTableDef):
+        assert (df.columns.to_list() == table.cols_name())
+        if table == TRAN_TABLE:
+            for index, row in df.iterrows():
+                print(row.to_list())
+                self.insert_tran(*row.to_list()[1:])
+            return
+        elif table == ASSET_TABLE:
+            for index, row in df.iterrows():
+                print(row.to_list())
+                self.insert_or_update(*row.to_list())
+            return
 
-    def get_all_data_csv(self):
-        cols = ASSET_TABLE.cols_name()
+    def get_data_csv(self, table: SQLTableDef):
+        cols = table.cols_name()
         with self.fsql as s:
-            r = s.query_all_asset()
+            r = s.query_all(table)
             df = pd.DataFrame(r, columns=cols)
         return df.to_csv(index=False).encode("utf-8")
+
+    def get_asset_data(self):
+        return self.get_data_csv(ASSET_TABLE)
+
+    def get_tran_data(self):
+        return self.get_data_csv(TRAN_TABLE)
+
+    def get_zip_data(self):
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zip:
+            asset_buffer = io.BytesIO(self.get_asset_data())
+            zip.writestr("asset.csv", asset_buffer.getvalue())
+            tran_buffer = io.BytesIO(self.get_tran_data())
+            zip.writestr("flow.csv", tran_buffer.getvalue())
+            zip.writestr("config.json", self.config_json())
+        return zip_buffer.getvalue()
+
+    def load_from_zip_data(self, file):
+        with zipfile.ZipFile(file, "r") as z:
+            files = z.namelist()
+            assert "asset.csv" in files and "flow.csv" in files and "config.json" in files
+            with z.open("config.json") as config:
+                self.load_config(json.load(config))
+                self.write_config()
+            with z.open("asset.csv") as asset_file:
+                data_df = pd.read_csv(asset_file)
+                valid, err_msg = self.verify_df(data_df)
+                FinLogger.expect_and_stop(valid, err_msg)
+                self.load_from_df(data_df, ASSET_TABLE)
+            with z.open("flow.csv") as flow_file:
+                flow_df = pd.read_csv(flow_file)
+                self.load_from_df(flow_df, TRAN_TABLE)
 
     def asset_table(self):
         cols = ASSET_TABLE.cols_name()

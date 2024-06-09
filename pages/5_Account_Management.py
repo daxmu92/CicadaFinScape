@@ -2,7 +2,6 @@ import sys
 import streamlit as st
 import pandas as pd
 import re
-import json
 
 sys.path.append("..")
 from src.context import FinContext
@@ -35,12 +34,9 @@ def k_init_all():
 
 k_init_all()
 
-st.set_page_config(page_title="Account Management",)
-st.title("Account Management")
+st.set_page_config(page_title="Account Overview",)
+st.title("Account Overview")
 st.divider()
-st.subheader("Account Categories")
-
-
 
 with st.sidebar:
     if st.button("Add account", type="primary", key="acc_add_asset", use_container_width=True):
@@ -48,7 +44,27 @@ with st.sidebar:
     if st.button("Delete account", key="acc_delete_asset", use_container_width=True):
         fw.delete_account()
 
+# Accounts
+st.subheader("Accounts overview")
+edit_on = st.toggle("Edit Category", key=st.session_state["acc_acc_toggle"])
+if not edit_on:
+    st.table(context.account_df())
+else:
+    col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
+    account_df = context.account_df()
+    col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in account_df.columns if col not in context.cat_dict})
+    df = st.data_editor(account_df, hide_index=True, column_config=col_config, use_container_width=True)
+    cols = st.columns(3)
+    with cols[0]:
+        st.button("Submit",
+                  on_click=FinContext.account_from_df,
+                  args=(context, df),
+                  type="primary",
+                  key="acc_acc_df_submit",
+                  use_container_width=True)
+
 # category
+st.subheader("Account Categories")
 cat_df = context.category_df()
 
 # TODO - use list editor
@@ -66,22 +82,3 @@ with col2:
     if st.button("Reset", use_container_width=True):
         k_incre_all()
         st.rerun()
-
-# Accounts
-st.subheader("Accounts")
-edit_on = st.toggle("Edit", key=st.session_state["acc_acc_toggle"])
-if not edit_on:
-    st.table(context.account_df())
-else:
-    col_config = {k: st.column_config.SelectboxColumn(k, options=v) for k, v in context.cat_dict.items()}
-    account_df = context.account_df()
-    col_config.update({col: st.column_config.TextColumn(col, disabled=True) for col in account_df.columns if col not in context.cat_dict})
-    df = st.data_editor(account_df, hide_index=True, column_config=col_config, use_container_width=True)
-    cols = st.columns(3)
-    with cols[0]:
-        st.button("Submit",
-                  on_click=FinContext.account_from_df,
-                  args=(context, df),
-                  type="primary",
-                  key="acc_acc_df_submit",
-                  use_container_width=True)

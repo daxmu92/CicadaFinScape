@@ -1,6 +1,7 @@
 import streamlit as st
 import warnings
 import json
+import zipfile
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -9,6 +10,7 @@ from streamlit_extras.grid import grid
 from src.context import FinContext
 import src.finsql as finsql
 import src.finutils as fu
+from src.st_utils import FinLogger
 
 
 def check_account():
@@ -125,7 +127,7 @@ def clear_data_dia():
         st.rerun()
 
 
-@st.experimental_dialog("Load data from csv file")
+@st.experimental_dialog("Load asset data from csv file")
 def load_from_csv_dia():
     context: FinContext = st.session_state['context']
     upload_file = st.file_uploader("Choose a csv file")
@@ -163,7 +165,7 @@ def load_from_csv_dia():
                 st.info("You don't have any missing account in uploaded csv")
 
         if st.button("Submit", key="load_csv_submit", type="primary"):
-            context.load_from_df(data_df)
+            context.load_from_df(data_df, finsql.ASSET_TABLE)
             context.add_account_from_df(acc_df)
             st.rerun()
 
@@ -173,6 +175,31 @@ def load_from_csv_dia():
     else:
         st.warning("You need to upload a csv file")
 
+
+@st.experimental_dialog("Load zipped data")
+def load_from_zipped_dia():
+    st.warning("Load from zipped data will clear up all of yours data!")
+    context: FinContext = st.session_state['context']
+    upload_file = st.file_uploader("Choose a zip file")
+    if upload_file is not None:
+        file_list = ["asset.csv", "flow.csv", "config.json"]
+        with zipfile.ZipFile(upload_file, "r") as z:
+            files = z.namelist()
+            for f in file_list:
+                FinLogger.expect_and_stop(f in files, f"Doesn't find {f} in uploaded zip")
+        if st.button("Submit", key="load_zipped_file_submit", type="primary", use_container_width=True):
+            context.clear_config()
+            context.write_config()
+            context.init_db()
+            context.load_from_zip_data(upload_file)
+            st.rerun()
+    else:
+        st.button("Submit", key="load_zipped_file_submit_disable", type="secondary", use_container_width=True, disabled=True)
+
+
+@st.experimental_dialog("Unsupported function")
+def unsupported_dia(err_msg):
+    st.info(f"Sorry, {err_msg} is not supported yet")
 
 @st.experimental_dialog("Your database is not valid")
 def init_db():

@@ -255,14 +255,14 @@ class FinSQL:
     def cmd_filter_acc_ass(len_of_values):
         return FinSQL.cmd_filter_cols(["ACCOUNT", "SUBACCOUNT"], len_of_values)
 
-    def load_from_csv(self, csv_path):
+    def load_from_csv(self, csv_path, table: SQLTableDef):
         with open(csv_path, 'r') as f:
             reader = csv.reader(f)
             csv_data = list(reader)
-        assert (len(csv_data[0]) == len(ASSET_TABLE.ess_cols()))
+        assert (len(csv_data[0]) == len(table.ess_cols()))
 
         for data in csv_data[1:]:
-            insert_data = {x.name: y for x, y in zip(ASSET_TABLE.ess_cols(), data)}
+            insert_data = {x.name: y for x, y in zip(table.ess_cols(), data)}
             self.insert_asset(insert_data)
         self.db.commit()
 
@@ -276,9 +276,12 @@ class FinSQL:
         results = self.exec(f'''SELECT * FROM {ASSET_TABLE.name()} WHERE ACCOUNT = "{acc_name}" and SUBACCOUNT = "{name}"''')
         return results
 
-    def query_all_asset(self):
-        results = self.exec(f"SELECT * FROM {ASSET_TABLE.name()}").fetchall()
+    def query_all(self, table: SQLTableDef):
+        results = self.exec(f"SELECT * FROM {table.name()}").fetchall()
         return results
+
+    def query_all_asset(self):
+        return self.query_all(self, ASSET_TABLE)
 
     def query_period(self, start_date, end_date, acc_ass_l: list[tuple], cols=ASSET_TABLE.cols_name()):
         col_str = ", ".join(cols)
