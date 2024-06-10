@@ -86,12 +86,11 @@ if "cicada_record_journey_date" not in st.session_state:
 
 date = st.session_state["cicada_record_journey_date"]
 acc, sub = get_acc()
+st.write(f"### :green-background[{acc}]-:orange-background[{sub}]:")
 
 last_row: pd.DataFrame = context.query_last_data(date, acc, sub)
 cur_row: pd.DataFrame = context.query_subacc_by_date(date, acc, sub, False)
 last_net = 0 if last_row.empty else last_row.iloc[0]["NET_WORTH"]
-
-st.write(f"### :green-background[{acc}]-:orange-background[{sub}]:")
 fw.show_last_and_cur_record(last_row, cur_row)
 
 net, invest, profit = fw.net_inflow_profit_sync_input(last_net)
@@ -115,7 +114,7 @@ def new_record_menu_onchange(key):
     st.rerun()
 
 
-g = grid(3, gap="small")
+g: st = grid(3, gap="small")
 if g.button("Submit", key=f"new_record_journey_menu_submit", type="primary", use_container_width=True):
     new_record_menu_onchange("Submit")
 if g.button("Skip", key=f"new_record_journey_menu_skip", use_container_width=True):

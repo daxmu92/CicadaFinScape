@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import re
 
 
 def cur_date():
@@ -47,3 +48,7 @@ def round_df(df: pd.DataFrame, cols):
 
 def format_dec_df(df: pd.DataFrame, cols):
     return df.style.format({c: "{:.1f}" for c in cols})
+
+
+def incre_str(s):
+    return re.sub(r'(?:(\d+))?$', lambda x: '_0' if x.group(1) is None else str(int(x.group(1)) + 1), s)

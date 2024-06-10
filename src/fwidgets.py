@@ -2,6 +2,7 @@ import streamlit as st
 import warnings
 import json
 import zipfile
+import random
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -86,26 +87,33 @@ def editable_accounts(df=None, key=0, container_width=False):
     return st.data_editor(df, hide_index=True, column_config=col_config, key=key, use_container_width=container_width)
 
 
-def year_selector(key=0):
+def year_selector(key="year_selector_0", container=st):
     year_list = list(range(2000, 2100))
     cur_year = fu.cur_year()
     index = 0
     if cur_year in year_list:
         index = cur_year - year_list[0]
-    return st.selectbox("Year", year_list, index=index, key=key)
+    return container.selectbox("Year", year_list, index=index, key=key)
 
-def month_radio(key=0):
+
+def month_radio(key="month_radio_0", container=st):
     month_list = list(range(1, 13))
     cur_month = fu.cur_month()
     index = cur_month - month_list[0]
-    return st.radio("Month", month_list, index=index, key=key, horizontal=True)
+    # key = f"{key}_{random.random()}"
+    return container.radio("Month", month_list, index=index, key=key, horizontal=True)
 
-def year_month_selector(key=0):
-    year = year_selector(key="add_asset_dia_year")
-    month = month_radio(key="add_asset_dia_month")
+
+def year_month_selector(key=0, container=st):
+    year = year_selector(key=f"add_asset_dia_year_{key}", container=container)
+    month = month_radio(key=f"add_asset_dia_month_{key}", container=container)
     date = pd.Period(year=year, month=month, freq="M").strftime("%Y-%m")
     return date
 
+
+def year_month_selector_oneline(key=0):
+    g: st = grid([1, 7])
+    return year_month_selector(0, g)
 
 @st.experimental_dialog("RESET DATA TO SAMPLE DATA")
 def reset_sample_data_dia():
@@ -227,18 +235,100 @@ def net_inflow_profit_sync_input(last_net):
         return
 
     if st.toggle("Auto fill", value=True, key="ass_add_ass_record_toggle"):
-        g = grid(3, vertical_align="bottom")
+        g: st = grid(3, vertical_align="bottom")
         net = g.number_input("NET_WORTH", key="ass_add_ass_record_period_input0", value=last_net, on_change=update, args=("input0",))
         inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1",))
         profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("input2",))
     else:
-        g = grid(3, vertical_align="bottom")
+        g: st = grid(3, vertical_align="bottom")
         net = g.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
         inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1")
         profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2")
 
     return net, inflow, profit
 
+
+def record_input_helper(key="record_input_helper", default=0, on_change=None):
+    key_of_num_record = f"{key}_num_record"
+    if key_of_num_record not in st.session_state:
+        st.session_state[key_of_num_record] = 1
+    num_record = st.session_state[key_of_num_record]
+
+    def update(total_key, single_key, number_key, exchange_key, is_total_input):
+        if not is_total_input:
+            st.session_state[total_key] = st.session_state[single_key] * st.session_state[number_key] * st.session_state[exchange_key]
+        else:
+            st.session_state[single_key] = st.session_state[total_key]
+            st.session_state[number_key] = 1
+            st.session_state[exchange_key] = 1
+        if on_change is not None:
+            pass
+            # on_change(net)
+
+    total_net_worth = 0
+    for i in range(num_record):
+        g: st = grid(4)
+        total_key = f"{key}_total_value_{i}"
+        single_key = f"{key}_single_value_{i}"
+        number_key = f"{key}_number_{i}"
+        exchange_key = f"{key}_exchange_{i}"
+
+        default_total = default if i == 0 else 0
+
+        update_args = (total_key, single_key, number_key, exchange_key, True)
+        value = g.number_input("Value", key=total_key, value=default_total, on_change=update, args=update_args)
+        update(*update_args)
+        update_args = (total_key, single_key, number_key, exchange_key, False)
+        single_value = g.number_input("Unit value", key=single_key, on_change=update, args=update_args)
+        number = g.number_input("Number of unit", key=number_key, on_change=update, args=update_args)
+        exchange = g.number_input("Exchange", key=exchange_key, on_change=update, args=update_args)
+        total_net_worth += value
+
+    return total_net_worth
+
+
+def record_input_helper_clear(key="record_input_helper"):
+    key_of_num_record = f"{key}_num_record"
+    st.session_state.pop(key_of_num_record, None)
+    i = 0
+    total_key = f"{key}_total_value_{i}"
+    single_key = f"{key}_single_value_{i}"
+    number_key = f"{key}_number_{i}"
+    exchange_key = f"{key}_exchange_{i}"
+    for k in [total_key, single_key, number_key, exchange_key]:
+        st.session_state.pop(k, None)
+
+
+def net_inflow_profit_sync_input_with_helper(last_net):
+
+    def update(last_change, net_worth):
+        net_change = net_worth - last_net
+        if last_change == "input1":
+            st.session_state["ass_add_ass_record_period_input2"] = net_change - st.session_state["ass_add_ass_record_period_input1"]
+        elif last_change == "input2":
+            st.session_state["ass_add_ass_record_period_input1"] = net_change - st.session_state["ass_add_ass_record_period_input2"]
+        else:
+            st.exception(RuntimeError("should not reach here"))
+        return
+
+    def net_worth_update(net):
+        inflow = st.session_state.get("ass_add_ass_record_period_input1", 0)
+        st.session_state["ass_add_ass_record_period_input2"] = net - inflow
+
+    if st.toggle("Helper", value=True, key="ass_add_ass_record_toggle"):
+        net = record_input_helper("net_worth", default=last_net, on_change=net_worth_update)
+        g: st = grid(4, vertical_align="bottom")
+        st.session_state["ass_add_ass_record_period_input_0"] = net
+        g.number_input("NET WORTH", key="ass_add_ass_record_period_input_0", disabled=True, value=net)
+        increase = net - last_net
+        inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1", net), value=0)
+        profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2", on_change=update, args=("input2", net), value=increase)
+    else:
+        g: st = grid(4, vertical_align="bottom")
+        net = g.number_input("NET_WORTH", key="ass_add_ass_record_period_input0")
+        inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1")
+        profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2")
+    return net, inflow, profit
 
 def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
     info_df = pd.concat([last_row, cur_row], ignore_index=True)
@@ -253,7 +343,7 @@ def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
 
     if not info_df.empty:
         info_df = fu.format_dec_df(info_df, ["NET_WORTH", "INFLOW", "PROFIT"])
-        st.info(info_str)
+        # st.info(info_str)
         st.table(info_df)
     else:
         st.info(f"Doesn't find previous record")
