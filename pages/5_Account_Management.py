@@ -38,12 +38,6 @@ st.set_page_config(page_title="Account Overview",)
 st.title("Account Overview")
 st.divider()
 
-with st.sidebar:
-    if st.button("Add account", type="primary", key="acc_add_asset", use_container_width=True):
-        fw.add_account()
-    if st.button("Delete account", key="acc_delete_asset", use_container_width=True):
-        fw.delete_account()
-
 # Accounts
 st.subheader("Accounts overview")
 edit_on = st.toggle("Edit Category", key=st.session_state["acc_acc_toggle"])

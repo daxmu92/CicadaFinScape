@@ -4,6 +4,7 @@ import sys
 import re
 from streamlit_extras.grid import grid
 from streamlit_pills import pills
+from st_aggrid import AgGrid
 
 sys.path.append("..")
 
@@ -89,7 +90,10 @@ tabs = st.tabs(["Overview", "Add/Update Record"])
 with tabs[0]:
     data_df = context.asset_df(selected_acc, sub)
     data_df.sort_values("DATE", ascending=False, inplace=True)
-    st.table(data_df)
+    # st.table(data_df)
+    cols = st.columns([10, 9])
+    with cols[0]:
+        AgGrid(data_df, theme="material", fit_columns_on_grid_load=True)
 with tabs[1]:
     date = fw.year_month_selector_oneline()
     last_row: pd.DataFrame = context.query_last_data(date, acc, sub)

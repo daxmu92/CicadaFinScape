@@ -277,11 +277,11 @@ def record_input_helper(key="record_input_helper", default=0, on_change=None):
 
         update_args = (total_key, single_key, number_key, exchange_key, True)
         value = g.number_input("Value", key=total_key, value=default_total, on_change=update, args=update_args)
-        update(*update_args)
+        # update(*update_args)
         update_args = (total_key, single_key, number_key, exchange_key, False)
-        single_value = g.number_input("Unit value", key=single_key, on_change=update, args=update_args)
-        number = g.number_input("Number of unit", key=number_key, on_change=update, args=update_args)
-        exchange = g.number_input("Exchange", key=exchange_key, on_change=update, args=update_args)
+        single_value = g.number_input("Unit value", key=single_key, on_change=update, args=update_args, value=default_total)
+        number = g.number_input("Number of unit", key=number_key, on_change=update, args=update_args, value=1.0)
+        exchange = g.number_input("Exchange", key=exchange_key, on_change=update, args=update_args, value=1.0)
         total_net_worth += value
 
     return total_net_worth
