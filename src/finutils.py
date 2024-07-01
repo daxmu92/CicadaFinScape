@@ -52,3 +52,7 @@ def format_dec_df(df: pd.DataFrame, cols):
 
 def incre_str(s):
     return re.sub(r'(?:(\d+))?$', lambda x: '_0' if x.group(1) is None else str(int(x.group(1)) + 1), s)
+
+
+def norm_number(v, digits=2):
+    return round(v, digits)

@@ -1,15 +1,16 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 import sys
 import re
 from streamlit_extras.grid import grid
 from streamlit_pills import pills
-from st_aggrid import AgGrid
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 sys.path.append("..")
 
 from src.context import FinContext
-from src.finsql import ASSET_TABLE
+import src.finsql as fs
 from src.st_utils import FinLogger
 import src.fwidgets as fw
 import src.finutils as fu
@@ -91,9 +92,17 @@ with tabs[0]:
     data_df = context.asset_df(selected_acc, sub)
     data_df.sort_values("DATE", ascending=False, inplace=True)
     # st.table(data_df)
-    cols = st.columns([10, 9])
+    cols = st.columns([8, 8])
+    df = data_df.round(1)
     with cols[0]:
-        AgGrid(data_df, theme="material", fit_columns_on_grid_load=True)
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(headerClass='header-class', editable=False)
+        gridOptions = gb.build()
+        AgGrid(df, gridOptions=gridOptions, theme="balham", fit_columns_on_grid_load=True)
+    with cols[1]:
+        chart = alt.Chart(df).mark_line().encode(x=fs.COL_DATE.name, y=fs.COL_NET_WORTH.name)
+        st.altair_chart(chart, use_container_width=True)
+        pass
 with tabs[1]:
     date = fw.year_month_selector_oneline()
     last_row: pd.DataFrame = context.query_last_data(date, acc, sub)

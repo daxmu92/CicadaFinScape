@@ -9,13 +9,25 @@ import src.finutils as fu
 
 class SQLColDef:
 
-    def __init__(self, name: str = "", type: str = "", constraint: str = ""):
+    def __init__(self, name: str = "", type: str = "", constraint: str = "", format=None):
         self.name: str = name
         self.type = type
         self.constraint = constraint
+        self.format_func = format
 
     def col_def_str(self):
         return f"{self.name} {self.type} {self.constraint}"
+
+    def format(self, value):
+        if self.format_func is not None:
+            value = self.format_func(value)
+
+        if self.type == "TEXT":
+            value = f"'{value}'"
+        else:
+            value = str(value)
+        return value
+
 
 class SQLTableDef:
 
@@ -63,17 +75,17 @@ class SQLTableDef:
 TRAN_INCOME_NAME = "INCOME"
 TRAN_OUTLAY_NAME = "OUTLAY"
 
-COL_DATE = SQLColDef("DATE", "TEXT", "NOT NULL")
+COL_DATE = SQLColDef("DATE", "TEXT", "NOT NULL", fu.norm_date)
 COL_ACCOUNT = SQLColDef("ACCOUNT", "TEXT", "NOT NULL")
 COL_NAME = SQLColDef("SUBACCOUNT", "TEXT", "NOT NULL")
-COL_NET_WORTH = SQLColDef("NET_WORTH", "REAL", "NOT NULL")
-COL_INFLOW = SQLColDef("INFLOW", "REAL", "NOT NULL")
-COL_PROFIT = SQLColDef("PROFIT", "REAL", "NOT NULL")
+COL_NET_WORTH = SQLColDef("NET_WORTH", "REAL", "NOT NULL", fu.norm_number)
+COL_INFLOW = SQLColDef("INFLOW", "REAL", "NOT NULL", fu.norm_number)
+COL_PROFIT = SQLColDef("PROFIT", "REAL", "NOT NULL", fu.norm_number)
 ASSET_TABLE = SQLTableDef("SUBACCOUNT", [COL_DATE, COL_ACCOUNT, COL_NAME, COL_NET_WORTH, COL_INFLOW, COL_PROFIT])
 
 COL_TRAN_ID = SQLColDef("ID", "INTEGER", "PRIMARY KEY")
 COL_TRAN_TYPE = SQLColDef("TYPE", "TEXT", "NOT NULL")
-COL_TRAN_VALUE = SQLColDef("VALUE", "REAL", "NOT NULL")
+COL_TRAN_VALUE = SQLColDef("VALUE", "REAL", "NOT NULL", fu.norm_number)
 COL_TRAN_CAT = SQLColDef("CAT", "TEXT", "NOT NULL")
 COL_TRAN_NOTE = SQLColDef("NOTE", "TEXT", "NOT NULL")
 TRAN_TABLE = SQLTableDef("TRAN", [COL_TRAN_ID, COL_DATE, COL_TRAN_TYPE, COL_TRAN_VALUE, COL_TRAN_CAT, COL_TRAN_NOTE])
@@ -221,12 +233,8 @@ class FinSQL:
             k = c.name
             assert k in data, f"{k} is not in {data}"
             insert_keys.append(k)
-            if c.name == "DATE":
-                insert_values.append(f"'{fu.norm_date(data[k])}'")
-            elif c.type == "TEXT":
-                insert_values.append(f"'{data[k]}'")
-            else:
-                insert_values.append(str(data[k]))
+            value = c.format(data[k])
+            insert_values.append(value)
         for k in table.ex_cols():
             if k in data:
                 insert_keys.append(data[k])
