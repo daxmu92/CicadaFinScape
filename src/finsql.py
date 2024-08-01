@@ -275,7 +275,7 @@ class FinSQL:
         self.db.commit()
 
     def query_max(self, col, table: SQLTableDef):
-        return self.exec(f'''SELECT MAX({col}) FROM {table.name()}''').fetchone()
+        return self.exec(f'''SELECT MAX({col}) FROM {table.name()}''').fetchone()[0]
 
     def query_table_info(self, table: SQLTableDef):
         return self.exec(f'''PRAGMA table_info({table.name()})''').fetchall()
