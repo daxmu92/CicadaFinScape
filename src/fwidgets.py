@@ -299,6 +299,9 @@ def record_input_helper_clear(key="record_input_helper"):
         st.session_state.pop(k, None)
 
 
+def net_inflow_profit_sync_input_refresh():
+    st.session_state["ass_add_ass_record_refresh"] = True
+
 def net_inflow_profit_sync_input_with_helper(last_net):
 
     def update(last_change, net_worth):
@@ -311,14 +314,25 @@ def net_inflow_profit_sync_input_with_helper(last_net):
             st.exception(RuntimeError("should not reach here"))
         return
 
+    def refresh(net):
+        if "ass_add_ass_record_refresh" not in st.session_state:
+            st.session_state["ass_add_ass_record_refresh"] = False
+        if st.session_state["ass_add_ass_record_refresh"]:
+            st.session_state["ass_add_ass_record_refresh"] = False
+            if "ass_add_ass_record_period_input1" in st.session_state and "ass_add_ass_record_period_input2" in st.session_state:
+                st.session_state["ass_add_ass_record_period_input1"] = 0
+                update("input1", net)
+
     def net_worth_update(net):
         inflow = st.session_state.get("ass_add_ass_record_period_input1", 0)
         st.session_state["ass_add_ass_record_period_input2"] = net - inflow
 
-    if st.toggle("Helper", value=True, key="ass_add_ass_record_toggle"):
+    # if st.toggle("Helper", value=True, key="ass_add_ass_record_toggle"):
+    if True:
         net = record_input_helper("net_worth", default=last_net, on_change=net_worth_update)
         g: st = grid(4, vertical_align="bottom")
         st.session_state["ass_add_ass_record_period_input_0"] = net
+        refresh(net)
         g.number_input("NET WORTH", key="ass_add_ass_record_period_input_0", disabled=True, value=net)
         increase = net - last_net
         inflow = g.number_input("INFLOW", key="ass_add_ass_record_period_input1", on_change=update, args=("input1", net), value=0)

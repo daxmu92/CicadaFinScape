@@ -43,9 +43,10 @@ def get_acc():
     return acc_name
 
 
-def set_acc(acc, key):
+def set_acc(acc, button_key):
     st.session_state[ACC_KEY] = acc_name_list.index(acc)
     st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
+    fw.net_inflow_profit_sync_input_refresh()
 
 
 def format_func(name: str):
@@ -110,30 +111,11 @@ with tabs[1]:
     last_net = 0 if last_row.empty else last_row.iloc[0]["NET_WORTH"]
     fw.show_last_and_cur_record(last_row, cur_row)
 
-    # net, invest, profit = fw.net_inflow_profit_sync_input(last_net)
     net, invest, profit = fw.net_inflow_profit_sync_input_with_helper(last_net)
     g: st = grid(4)
     if g.button("Submit", key=f"account_{acc}-{sub}_submit", type="primary", use_container_width=True):
         context.insert_or_update(date, acc, sub, net, invest, profit)
+        fw.net_inflow_profit_sync_input_refresh()
         st.rerun()
-
-# # return True if the iter take effect
-# def acc_move(is_next) -> bool:
-#     accid = st.session_state.get(ACC_KEY)
-#     if accid is None:
-#         FinLogger.should_not_reach_here()
-#
-#     if is_next:
-#         accid += 1
-#     else:
-#         accid -= 1
-#
-#     if accid not in range(len(acc_name_list)):
-#         return False
-#
-#     st.session_state[ACC_KEY] = accid
-#     return True
-# def iter_to_next() -> bool:
-#     return acc_move(True)
-# def iter_to_prev() -> bool:
-#     return acc_move(False)
+    if g.button("Reset", key=f"account_{acc}-{sub}_reset", type="secondary", use_container_width=True):
+        fw.net_inflow_profit_sync_input_refresh()
