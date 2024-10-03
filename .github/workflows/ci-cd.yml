@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build:
@@ -12,27 +12,29 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
+    - name: setup python
+      uses: actions/setup-python@v2
       with:
-        node-version: '14'
+        python-version: '3.10'
 
     - name: Install dependencies
-      run: npm ci
-
-    - name: Run tests
-      run: npm test
-
-    - name: Build
-      run: npm run build
+      run: |
+        python -m pip install --upgrade pip setuptools
+        pip install -r requirements.txt
+  
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Debug
+      run: echo "github.ref is ${{ github.ref }}"
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/master'
 
     steps:
-    - name: Deploy to production
-      # Add your deployment steps here
-      run: echo "Deploying to production"
+    - name: deploy
+      run: |
+        echo "Deploying"
+        streamlit run Home.py
