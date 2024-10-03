@@ -28,6 +28,7 @@ class SQLColDef:
         else:
             value = str(value)
         return value
+# test
 
 
 class SQLTableDef:
