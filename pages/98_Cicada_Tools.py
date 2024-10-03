@@ -20,10 +20,10 @@ st.divider()
 st.write("#### Reset your data")
 g_reset: st = grid(2, 2, vertical_align="bottom")
 if g_reset.button("**Reset Asset Table**", key="reset_asset_table_button", use_container_width=True):
-    fw.confirm_dia(FinContext.reset_asset_table, (context,), "**You are reseting your Asset table**")
+    fw.confirm_dia(FinContext.reset_asset, (context,), "**You are reseting your Asset table**")
 
 if g_reset.button("**Reset Money flow Table**", key="reset_tran_table_button", use_container_width=True):
-    fw.confirm_dia(FinContext.reset_tran_table, (context,), "You are reseting your Money flow table")
+    fw.confirm_dia(FinContext.reset_tran, (context,), "You are reseting your Money flow table")
 
 if g_reset.button("**Clear all Data**", use_container_width=True):
     fw.clear_data_dia()
@@ -41,15 +41,15 @@ if selected == select_list[0]:
     file_name = f"cfs-data-{fu.cur_date()}.zip"
     mime = None
 elif selected == select_list[1]:
-    selected_data = context.get_data_csv(finsql.ASSET_TABLE)
+    selected_data = context.get_asset_data()
     file_name = f"cfs-asset-data-{fu.cur_date()}.txt"
     mime = "text/csv"
 elif selected == select_list[2]:
-    selected_data = context.get_data_csv(finsql.TRAN_TABLE)
+    selected_data = context.get_tran_data()
     file_name = f"cfs-tran-data-{fu.cur_date()}.txt"
     mime = "text/csv"
 elif selected == select_list[3]:
-    selected_data = context.config_json()
+    selected_data = context.config.to_json()
     file_name = f"cfs-account-config-{fu.cur_date()}.json"
     mime = "application/json"
 
@@ -68,6 +68,6 @@ g_query_table: st = grid(2, vertical_align="bottom")
 table_name = g_query_table.selectbox("Select a table", [finsql.ASSET_TABLE.name(), finsql.TRAN_TABLE.name()])
 if g_query_table.button("**Query table info**", key="query_table_info_button", use_container_width=True):
     if table_name == finsql.ASSET_TABLE.name():
-        st.write(context.query_table_info(finsql.ASSET_TABLE))
+        st.write(context.query_asset_info())
     else:
-        st.write(context.query_table_info(finsql.TRAN_TABLE))
+        st.write(context.query_tran_info())

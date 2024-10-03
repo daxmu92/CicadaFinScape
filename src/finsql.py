@@ -90,6 +90,7 @@ COL_TRAN_CAT = SQLColDef("CAT", "TEXT", "NOT NULL")
 COL_TRAN_NOTE = SQLColDef("NOTE", "TEXT", "NOT NULL")
 TRAN_TABLE = SQLTableDef("TRAN", [COL_TRAN_ID, COL_DATE, COL_TRAN_TYPE, COL_TRAN_VALUE, COL_TRAN_CAT, COL_TRAN_NOTE])
 
+
 class AssetItem:
 
     def __init__(self, name: str, acc: Account):
@@ -149,6 +150,7 @@ class Account:
     def asset(self, sub_name):
         asset = next(filter(lambda x: x.name == sub_name, self.asset_list), None)
         return asset
+
 
 class FinSQL:
 

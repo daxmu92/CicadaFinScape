@@ -16,7 +16,7 @@ from src.st_utils import FinLogger
 
 def check_account():
     context: FinContext = st.session_state['context']
-    if not context.acc:
+    if not context.config.acc:
         st.warning("You don't have any account, go to Account management page to create one")
         return False
     return True
@@ -24,19 +24,20 @@ def check_account():
 
 def check_subaccount():
     context: FinContext = st.session_state['context']
-    for acc in context.acc:
-        if len(context.acc[acc].asset_list) == 0:
+    for acc in context.config.acc:
+        if len(context.config.acc[acc].sub_name_list()) == 0:
             st.warning(f"You don't have any subaccount under {acc}, go to Account management page to create one")
             return False
     return True
 
 
 def check_database():
-    context: FinContext = st.session_state['context']
-    if context.db_empty():
-        st.warning(f"You don't have any data record, go to Account/Cicada journey page to add record")
-        return False
     return True
+    # TODO
+    # context: FinContext = st.session_state['context']
+    # if context.data.empty(finsql.ASSET_TABLE):
+    #     st.warning(f"You don't have any data record, go to Account/Cicada journey page to add record")
+    #     return False
 
 
 def check_all():
@@ -54,29 +55,31 @@ def add_account():
     edit_on = st.toggle("New Account", key=st.session_state["acc_new_acc_toggle"])
     acc_name = ""
     if not edit_on:
-        acc_name = st.selectbox("Select Account", [v.name for k, v in context.acc.items()])
+        acc_name = st.selectbox("Select Account", context.config.acc_name_list())
     else:
         acc_name = st.text_input("New Account")
 
     sub_name = st.text_input("New Subaccount")
 
     cats = {}
-    for k, v in context.cat_dict.items():
+    for k, v in context.config.cat_dict.items():
         cats[k] = st.selectbox(f"Category {k}:", v)
 
-    if st.button("Submit", on_click=FinContext.add_asset, args=(context, acc_name, sub_name, cats), type="primary", key="acc_new_acc_submit"):
+    if st.button("Submit", type="primary", key="acc_new_acc_submit"):
+        context.config.add_asset(acc_name, sub_name, cats)
         st.rerun()
 
 
 @st.experimental_dialog("Delete Account")
 def delete_account():
     context: FinContext = st.session_state['context']
-    acc_name = st.selectbox("Select Account", [v.name for k, v in context.acc.items()])
-    sub_name = st.selectbox("Select Subaccount", [x.name for x in context.acc[acc_name].asset_list])
+    acc_name = st.selectbox("Select Account", context.config.acc_name_list())
+    sub_name = st.selectbox("Select Subaccount", context.config.subacc_name_list(acc_name))
 
     if st.button("DELETE", key="acc_delete_sub_acc_delete"):
         context.delete_asset(acc_name, sub_name)
         st.rerun()
+
 
 def editable_accounts(df=None, key=0, container_width=False):
     context: FinContext = st.session_state['context']
@@ -115,6 +118,7 @@ def year_month_selector_oneline(key=0):
     g: st = grid([1, 7])
     return year_month_selector(0, g)
 
+
 @st.experimental_dialog("RESET DATA TO SAMPLE DATA")
 def reset_sample_data_dia():
     st.write("# WARNING: All of your data will be reset and can not recover")
@@ -141,7 +145,7 @@ def load_from_csv_dia():
     upload_file = st.file_uploader("Choose a csv file")
     if upload_file is not None:
         data_df = pd.read_csv(upload_file)
-        valid, err_msg = context.verify_df(data_df)
+        valid, err_msg = context.verify_asset_df(data_df)
         if not valid:
             st.error(err_msg)
             st.stop()
@@ -160,11 +164,11 @@ def load_from_csv_dia():
             acc_data = []
             for i in new_ass:
                 d = list(i)
-                d.extend([None] * len(context.cat_dict))
+                d.extend([None] * len(context.config.cat_dict))
                 acc_data.append(d)
 
             cols = ["ACCOUNT", "SUBACCOUNT"]
-            cols.extend([k for k in context.cat_dict])
+            cols.extend([k for k in context.config.cat_dict])
 
             if acc_data:
                 acc_df = pd.DataFrame(columns=cols, data=acc_data)
@@ -173,8 +177,8 @@ def load_from_csv_dia():
                 st.info("You don't have any missing account in uploaded csv")
 
         if st.button("Submit", key="load_csv_submit", type="primary"):
-            context.load_from_df(data_df, finsql.ASSET_TABLE)
-            context.add_account_from_df(acc_df)
+            context.df_to_asset(acc_df)
+            context.config.add_account_from_df(acc_df)
             st.rerun()
 
         st.write("Your uploaded file:")
@@ -196,8 +200,8 @@ def load_from_zipped_dia():
             for f in file_list:
                 FinLogger.expect_and_stop(f in files, f"Doesn't find {f} in uploaded zip")
         if st.button("Submit", key="load_zipped_file_submit", type="primary", use_container_width=True):
-            context.clear_config()
-            context.write_config()
+            context.config.clear_config()
+            context.config.write_config()
             context.init_db()
             context.load_from_zip_data(upload_file)
             st.rerun()
@@ -208,6 +212,7 @@ def load_from_zipped_dia():
 @st.experimental_dialog("Unsupported function")
 def unsupported_dia(err_msg):
     st.info(f"Sorry, {err_msg} is not supported yet")
+
 
 @st.experimental_dialog("Your database is not valid")
 def init_db():
@@ -302,6 +307,7 @@ def record_input_helper_clear(key="record_input_helper"):
 def net_inflow_profit_sync_input_refresh():
     st.session_state["ass_add_ass_record_refresh"] = True
 
+
 def net_inflow_profit_sync_input_with_helper(last_net):
 
     def update(last_change, net_worth):
@@ -344,6 +350,7 @@ def net_inflow_profit_sync_input_with_helper(last_net):
         profit = g.number_input("PROFIT", key="ass_add_ass_record_period_input2")
     return net, inflow, profit
 
+
 def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
     info_df = pd.concat([last_row, cur_row], ignore_index=True)
     info_df = info_df[["DATE", "NET_WORTH", "INFLOW", "PROFIT"]]
@@ -377,8 +384,9 @@ def insert_or_update_record_dia(acc, sub):
     net, invest, profit = net_inflow_profit_sync_input(last_net)
 
     if st.button("Submit", key="ass_add_ass_record_button", type="primary"):
-        context.insert_or_update(date, acc, sub, net, invest, profit)
+        context.insert_or_update_asset(date, acc, sub, net, invest, profit)
         st.rerun()
+
 
 @st.experimental_dialog("DELETE SUBACCOUNT")
 def delete_subaccount_dia(acc_name, sub_name):
@@ -404,7 +412,7 @@ def delete_selected_data_dia(acc_name, sub_name, date_list: list):
     with col1:
         if st.button("DELETE", key="delete_dialog_delete", use_container_width=True):
             for date in date_list:
-                context.delete_data(date, acc_name, sub_name)
+                context.delete_asset_data(date, acc_name, sub_name)
             st.rerun()
 
     with col2:
@@ -442,7 +450,7 @@ def confirm_dia(func, args, info):
 def delete_selected_money_flow_dia(id_list: list[int]):
     context: FinContext = st.session_state["context"]
     st.warning("**You are DELETING your money flow record:**")
-    df = context.query_tran_all()
+    df = context.query_tran()
     df = df[df[finsql.COL_TRAN_ID.name].isin(id_list)]
     st.table(df)
 
@@ -473,8 +481,8 @@ def load_acc_config_from_json_dia():
     if upload_file is not None:
         config = json.load(upload_file)
         if st.button("Submit", key="load_config_from_json_submit", type="primary"):
-            context.load_config(config)
-            context.write_config()
+            context.config.load_from_dict(config)
+            context.config.write_config()
             st.rerun()
         st.json(config, expanded=True)
     else:

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.context import FinContext
 
+
 class FinLogger:
 
     def exception(s: str):

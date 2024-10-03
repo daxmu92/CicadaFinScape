@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 from streamlit_extras.grid import grid
 
-import src.finsql as finsql
 from src.context import FinContext
 import src.fwidgets as fw
 import src.finutils as fu
@@ -27,7 +26,7 @@ st.session_state['context'] = context
 st.title("Welcome to Cicada Financial Scape!")
 st.divider()
 
-if not context.validate_db():
+if not context.validate():
     fw.init_db()
     st.stop()
 
@@ -36,6 +35,8 @@ fw.check_all()
 cur_date = fu.norm_date(fu.cur_date())
 date_list = fw.get_date_list()
 g: st = grid([12, 1, 1])
+
+
 def update_selected_date(previous):
     print(previous)
     if previous:
@@ -46,6 +47,7 @@ def update_selected_date(previous):
         next = fu.next_date(st.session_state["home_select_date_slider"])
         if next in date_list:
             st.session_state["home_select_date_slider"] = next
+
 
 selected_date = g.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed", key="home_select_date_slider")
 g.button("<", use_container_width=True, key="home_select_date_slider_previous_button", on_click=update_selected_date, args=(True,))
@@ -81,7 +83,7 @@ with col2:
 # overview_chart = context.overview_area_chart()
 # st.plotly_chart(overview_chart, theme="streamlit", use_container_width=True)
 
-cat_list = list(context.cat_dict.keys())
+cat_list = list(context.config.cat_dict.keys())
 st.write("### Category distribution: ")
 if not cat_list:
     st.info("You haven't specify any category")

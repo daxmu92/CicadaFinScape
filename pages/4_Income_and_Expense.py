@@ -15,7 +15,7 @@ st.set_page_config(page_title="Income and Expense")
 st.title("Income and Expense")
 st.divider()
 
-tran_df = context.query_tran_all()
+tran_df = context.query_tran()
 enable_edit = st.toggle("Edit", False, key="income_and_expense_toggle")
 if enable_edit:
     col_configs = {k: st.column_config.TextColumn(k, disabled=False) for k in tran_df.columns}
