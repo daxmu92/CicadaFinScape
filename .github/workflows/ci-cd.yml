@@ -22,19 +22,11 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
   
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Debug
-      run: echo "github.ref is ${{ github.ref }}"
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/master'
 
     steps:
     - name: deploy
       run: |
         echo "Deploying"
-        streamlit run Home.py
