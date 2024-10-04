@@ -10,7 +10,6 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 sys.path.append("..")
 
 from src.context import FinContext
-import src.finsql as fs
 from src.st_utils import FinLogger
 import src.fwidgets as fw
 import src.finutils as fu
@@ -101,7 +100,7 @@ with tabs[0]:
         gridOptions = gb.build()
         AgGrid(df, gridOptions=gridOptions, theme="balham", fit_columns_on_grid_load=True)
     with cols[1]:
-        chart = alt.Chart(df).mark_line().encode(x=fs.COL_DATE.name, y=fs.COL_NET_WORTH.name)
+        chart = alt.Chart(df).mark_line().encode(x="DATE", y="NET_WORTH")
         st.altair_chart(chart, use_container_width=True)
         pass
 with tabs[1]:

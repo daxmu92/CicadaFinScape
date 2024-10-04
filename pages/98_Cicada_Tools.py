@@ -6,7 +6,6 @@ from streamlit_extras.grid import grid
 from streamlit_extras.row import row
 
 sys.path.append("..")
-import src.finsql as finsql
 from src.context import FinContext
 import src.fwidgets as fw
 import src.finutils as fu
@@ -65,9 +64,9 @@ if g_file.button("**Upload your file**", key="upload files", use_container_width
 
 st.write("#### Query table attributes")
 g_query_table: st = grid(2, vertical_align="bottom")
-table_name = g_query_table.selectbox("Select a table", [finsql.ASSET_TABLE.name(), finsql.TRAN_TABLE.name()])
+table_name = g_query_table.selectbox("Select a table", ["SUBACCOUNT", "TRAN"])
 if g_query_table.button("**Query table info**", key="query_table_info_button", use_container_width=True):
-    if table_name == finsql.ASSET_TABLE.name():
+    if table_name == "SUBACCOUNT":
         st.write(context.query_asset_info())
     else:
         st.write(context.query_tran_info())
