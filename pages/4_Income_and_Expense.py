@@ -4,7 +4,6 @@ import sys
 from streamlit_extras.grid import grid
 
 sys.path.append("..")
-import src.finsql as finsql
 from src.context import FinContext
 import src.fwidgets as fw
 import src.finutils as fu
@@ -19,11 +18,10 @@ tran_df = context.query_tran()
 enable_edit = st.toggle("Edit", False, key="income_and_expense_toggle")
 if enable_edit:
     col_configs = {k: st.column_config.TextColumn(k, disabled=False) for k in tran_df.columns}
-    col_configs[finsql.COL_TRAN_TYPE.name] = st.column_config.SelectboxColumn(finsql.COL_TRAN_TYPE.name,
-                                                                              options=[finsql.TRAN_INCOME_NAME, finsql.TRAN_OUTLAY_NAME])
-    col_configs[finsql.COL_DATE.name] = st.column_config.SelectboxColumn(finsql.COL_DATE.name, options=fw.get_date_list(), required=True)
-    col_configs[finsql.COL_TRAN_ID.name] = st.column_config.TextColumn(disabled=True)
-    col_configs[finsql.COL_TRAN_VALUE.name] = st.column_config.NumberColumn(required=True)
+    col_configs["TYPE"] = st.column_config.SelectboxColumn("TYPE", options=["INCOME", "OUTLAY"])
+    col_configs["DATE"] = st.column_config.SelectboxColumn("DATE", options=fw.get_date_list(), required=True)
+    col_configs["ID"] = st.column_config.TextColumn(disabled=True)
+    col_configs["VALUE"] = st.column_config.NumberColumn(required=True)
     df = st.data_editor(tran_df, hide_index=True, key="money_flow_df", use_container_width=True, column_config=col_configs, num_rows="dynamic")
     cols = st.columns(2)
     with cols[0]:

@@ -3,10 +3,7 @@ from collections import OrderedDict
 import json
 import os
 import pandas as pd
-
-from src.finsql import SQLColDef
 from src.st_utils import FinLogger
-
 
 class AssetItem:
 
@@ -14,7 +11,6 @@ class AssetItem:
         self.acc = acc
         self.name = name
         self.cats: dict[str, str] = {}
-        self.ex_cols: list[SQLColDef] = []
 
     def add_cat(self, cat: str, type: str):
         self.cats[cat] = type

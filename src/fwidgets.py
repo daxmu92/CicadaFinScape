@@ -9,7 +9,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 from streamlit_extras.grid import grid
 from src.context import FinContext
-import src.finsql as finsql
 import src.finutils as fu
 from src.st_utils import FinLogger
 
@@ -49,7 +48,7 @@ def check_all():
         st.stop()
 
 
-@st.experimental_dialog("New Account")
+@st.dialog("New Account")
 def add_account():
     context: FinContext = st.session_state['context']
     edit_on = st.toggle("New Account", key=st.session_state["acc_new_acc_toggle"])
@@ -70,7 +69,7 @@ def add_account():
         st.rerun()
 
 
-@st.experimental_dialog("Delete Account")
+@st.dialog("Delete Account")
 def delete_account():
     context: FinContext = st.session_state['context']
     acc_name = st.selectbox("Select Account", context.config.acc_name_list())
@@ -119,7 +118,7 @@ def year_month_selector_oneline(key=0):
     return year_month_selector(0, g)
 
 
-@st.experimental_dialog("RESET DATA TO SAMPLE DATA")
+@st.dialog("RESET DATA TO SAMPLE DATA")
 def reset_sample_data_dia():
     st.write("# WARNING: All of your data will be reset and can not recover")
     if st.button("Confirm", key="side_bar_reset_dia_confirm"):
@@ -128,7 +127,7 @@ def reset_sample_data_dia():
         st.rerun()
 
 
-@st.experimental_dialog("CLEAR DATA")
+@st.dialog("CLEAR DATA")
 def clear_data_dia():
     st.write("# WARNING: All of your data will be clear and can not recover")
     if st.button("Confirm", key="side_bar_clear_dia_confirm"):
@@ -139,7 +138,7 @@ def clear_data_dia():
         st.rerun()
 
 
-@st.experimental_dialog("Load asset data from csv file")
+@st.dialog("Load asset data from csv file")
 def load_from_csv_dia():
     context: FinContext = st.session_state['context']
     upload_file = st.file_uploader("Choose a csv file")
@@ -188,7 +187,7 @@ def load_from_csv_dia():
         st.warning("You need to upload a csv file")
 
 
-@st.experimental_dialog("Load zipped data")
+@st.dialog("Load zipped data")
 def load_from_zipped_dia():
     st.warning("Load from zipped data will clear up all of yours data!")
     context: FinContext = st.session_state['context']
@@ -209,12 +208,12 @@ def load_from_zipped_dia():
         st.button("Submit", key="load_zipped_file_submit_disable", type="secondary", use_container_width=True, disabled=True)
 
 
-@st.experimental_dialog("Unsupported function")
+@st.dialog("Unsupported function")
 def unsupported_dia(err_msg):
     st.info(f"Sorry, {err_msg} is not supported yet")
 
 
-@st.experimental_dialog("Your database is not valid")
+@st.dialog("Your database is not valid")
 def init_db():
     st.write("# Initialize your database? All of the data in database will be reset and can not recover")
     if st.button("Confirm", key="initial_reset_dia_confirm"):
@@ -370,7 +369,7 @@ def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
         st.info(f"Doesn't find previous record")
 
 
-@st.experimental_dialog("ADD OR UPDATE SUBACCOUNT RECORD")
+@st.dialog("ADD OR UPDATE SUBACCOUNT RECORD")
 def insert_or_update_record_dia(acc, sub):
     date = year_month_selector()
 
@@ -388,7 +387,7 @@ def insert_or_update_record_dia(acc, sub):
         st.rerun()
 
 
-@st.experimental_dialog("DELETE SUBACCOUNT")
+@st.dialog("DELETE SUBACCOUNT")
 def delete_subaccount_dia(acc_name, sub_name):
     st.write(f"## WARNING!")
     st.write(f"**You are DELETING your asset {sub_name} under {acc_name}, this will clear your data in database**")
@@ -400,7 +399,7 @@ def delete_subaccount_dia(acc_name, sub_name):
         st.rerun()
 
 
-@st.experimental_dialog("DELETE SELECTED DATA")
+@st.dialog("DELETE SELECTED DATA")
 def delete_selected_data_dia(acc_name, sub_name, date_list: list):
     context: FinContext = st.session_state["context"]
     st.write(f"## WARNING!")
@@ -425,11 +424,11 @@ def get_st_color_str_by_pos(value, pos_color="green", neg_color="red"):
     return color
 
 
-@st.experimental_dialog("ADD A MONEY FLOW")
+@st.dialog("ADD A MONEY FLOW")
 def add_money_flow_dia():
     context: FinContext = st.session_state["context"]
     date = year_month_selector()
-    tran_type = st.selectbox("Type", [finsql.TRAN_INCOME_NAME, finsql.TRAN_OUTLAY_NAME], key="add_money_flow_type_input")
+    tran_type = st.selectbox("Type", ["INCOME", "OUTLAY"], key="add_money_flow_type_input")
     value = st.number_input("Value", key="add_money_flow_number_input")
     cat = st.text_input("Category", key="add_money_flow_cat_input")
     note = st.text_input("Note", key="add_money_flow_note_input")
@@ -438,7 +437,7 @@ def add_money_flow_dia():
         st.rerun()
 
 
-@st.experimental_dialog("Confirm")
+@st.dialog("Confirm")
 def confirm_dia(func, args, info):
     st.warning(info)
     if st.button("Confirm", key="confirm_dia_button"):
@@ -446,12 +445,12 @@ def confirm_dia(func, args, info):
         st.rerun()
 
 
-@st.experimental_dialog("Delete selected money flow record")
+@st.dialog("Delete selected money flow record")
 def delete_selected_money_flow_dia(id_list: list[int]):
     context: FinContext = st.session_state["context"]
     st.warning("**You are DELETING your money flow record:**")
     df = context.query_tran()
-    df = df[df[finsql.COL_TRAN_ID.name].isin(id_list)]
+    df = df[df["ID"].isin(id_list)]
     st.table(df)
 
     col1, col2 = st.columns(2)
@@ -474,7 +473,7 @@ def get_date_list():
     return date_list
 
 
-@st.experimental_dialog("Load Accounts config from json file")
+@st.dialog("Load Accounts config from json file")
 def load_acc_config_from_json_dia():
     context: FinContext = st.session_state["context"]
     upload_file = st.file_uploader("Choose a json file")
