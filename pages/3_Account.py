@@ -5,7 +5,7 @@ import sys
 import re
 from streamlit_extras.grid import grid
 from streamlit_pills import pills
-from st_aggrid import AgGrid, GridOptionsBuilder
+# from st_aggrid import AgGrid, GridOptionsBuilder
 
 sys.path.append("..")
 
@@ -95,10 +95,11 @@ with tabs[0]:
     cols = st.columns([8, 8])
     df = data_df.round(1)
     with cols[0]:
-        gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_default_column(headerClass='header-class', editable=False)
-        gridOptions = gb.build()
-        AgGrid(df, gridOptions=gridOptions, theme="balham", fit_columns_on_grid_load=True)
+        st.dataframe(df, use_container_width=True)
+        # gb = GridOptionsBuilder.from_dataframe(df)
+        # gb.configure_default_column(headerClass='header-class', editable=False)
+        # gridOptions = gb.build()
+        # AgGrid(df, gridOptions=gridOptions, theme="balham", fit_columns_on_grid_load=True)
     with cols[1]:
         chart = alt.Chart(df).mark_line().encode(x="DATE", y="NET_WORTH")
         st.altair_chart(chart, use_container_width=True)
