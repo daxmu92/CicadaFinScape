@@ -1,10 +1,9 @@
 # 🦋 Cicada Financial Scape
 
-![Cicada Financial Scape](https://your-image-url-here.com/cicada-logo.png)
-
 ## 🌟 Overview
 
 Cicada Financial Scape is a powerful and intuitive financial management tool designed to help you track, analyze, and visualize your personal finances. Built with Python and Streamlit, this application offers a seamless experience for managing your assets, income, expenses, and overall financial health.
+- Preview: https://cicadafinscape-sample.streamlit.app/
 
 ## ✨ Features
 
