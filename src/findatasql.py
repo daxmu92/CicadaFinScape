@@ -62,6 +62,7 @@ class SQLTableDef:
         col_def = ',\n'.join([x.col_def_str() for x in self.cols()])
         return f"CREATE TABLE {self.name()} ({col_def});"
 
+
 class FinDataSQL:
 
     def __init__(self, db_path: str):
@@ -184,9 +185,16 @@ class FinDataSQL:
     def query_period(self, period_filter: dict[str, tuple[any, any]], filter: dict, table: SQLTableDef):
         period_cmds = [FinDataSQL.sql_cmd_between_period(table[col], start, end) for col, (start, end) in period_filter.items()]
         period_cmd = " AND ".join(period_cmds)
-        where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table)
-        cmd_str = f'''SELECT * FROM {table.name()} WHERE {period_cmd} AND {where_ph}'''
-        return self.exec_value(cmd_str, where_values).fetchall()
+
+        values = []
+        if filter:
+            where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table)
+            cmd_str = f'''SELECT * FROM {table.name()} WHERE {period_cmd} AND {where_ph}'''
+            values += where_values
+        else:
+            cmd_str = f'''SELECT * FROM {table.name()} WHERE {period_cmd}'''
+
+        return self.exec_value(cmd_str, values).fetchall()
 
     def delete_data(self, filter: dict, table: SQLTableDef):
         where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table)
