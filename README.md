@@ -1,4 +1,5 @@
 # 🦋 Cicada Financial Scape
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/daxmu92/CicadaFinScape/ci-cd.yml)](https://github.com/daxmu92/CicadaFinScape/actions)
 
 ## 🌟 Overview
 
