@@ -1,5 +1,5 @@
 altair
-streamlit
+streamlit == 1.39.0
 numpy
 cachetools
 pandas
@@ -7,7 +7,5 @@ pillow
 plotly
 protobuf
 st-pages
-streamlit-option-menu==0.3.12
-streamlit-extras==0.4.2
-streamlit-pills==0.3.0
-streamlit-aggrid==1.0.5
+streamlit-extras
+streamlit-pills
