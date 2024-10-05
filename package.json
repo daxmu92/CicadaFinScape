@@ -2,7 +2,7 @@
   "name": "cicada-fin-scape",
   "version": "1.0.0",
   "description": "A financial application built with Electron and Streamlit",
-  "author": "Your Name <your.email@example.com>",
+  "author": "Zhijia Liu <zjliu92@outlook.com>",
   "main": "./build/electron/main.js",
   "scripts": {
     "dump": "dump-stlite-desktop-artifacts",

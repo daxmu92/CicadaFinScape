@@ -20,8 +20,9 @@ csv_path = os.path.join(data_dir, "data.csv")
 db_path = os.path.join(data_dir, "test.db")
 
 # Init context
-context = FinContext(config_path, db_path)
-st.session_state['context'] = context
+if "context" not in st.session_state:
+    st.session_state['context'] = FinContext(config_path, db_path)
+context: FinContext = st.session_state['context']
 
 st.title("Welcome to Cicada Financial Scape!")
 st.divider()
@@ -38,7 +39,7 @@ g: st = grid([12, 1, 1])
 
 
 def update_selected_date(previous):
-    print(previous)
+    print("updating selected date, prev: ", previous)
     if previous:
         prev = fu.prev_date(st.session_state["home_select_date_slider"])
         if prev in date_list:

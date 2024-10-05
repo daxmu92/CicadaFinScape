@@ -15,11 +15,12 @@ class FinBaseData():
         self._table: fsql.SQLTableDef = None
 
     def validate(self):
-        with self._db as db:
-            tables = db.get_tables()
-
-        if self._name not in [x[0] for x in tables]:
-            return False
+        if self._df is None:
+            with self._db as db:
+                tables = db.get_tables()
+            if self._name not in [x[0] for x in tables]:
+                return False
+            self._df = self.load_from_db()
 
         return True
 
