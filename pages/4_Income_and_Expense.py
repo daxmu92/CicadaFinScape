@@ -21,7 +21,7 @@ month = fw.month_selector("income_and_expense_month_selector", 6, fu.cur_month()
 
 date = fu.get_date(year, month)
 
-tran_df = context.query_tran(date)
+tran_df = context.query_tran(date).copy()
 enable_edit = st.toggle("Edit", False, key="income_and_expense_toggle")
 if enable_edit:
     col_configs = {k: st.column_config.TextColumn(k, disabled=False) for k in tran_df.columns}
