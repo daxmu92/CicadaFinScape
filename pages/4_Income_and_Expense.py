@@ -56,5 +56,6 @@ else:
             fw.delete_selected_money_flow_dia(id_list)
 
 io_df = context.income_outlay_df()
+io_df = io_df.sort_values("DATE", ascending=False)
 df = io_df.style.format(precision=1)
 st.table(df)

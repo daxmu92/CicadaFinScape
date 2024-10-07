@@ -50,9 +50,29 @@ def update_selected_date(previous):
             st.session_state["home_select_date_slider"] = next
 
 
-selected_date = g.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed", key="home_select_date_slider")
-g.button("<", use_container_width=True, key="home_select_date_slider_previous_button", on_click=update_selected_date, args=(True,))
-g.button("\>", use_container_width=True, key="home_select_date_slider_next_button", on_click=update_selected_date, args=(False,))
+cur_year = fu.cur_year()
+index = fw.get_year_list().index(cur_year)
+year = st.selectbox("Select year", fw.get_year_list(), index=index, label_visibility="collapsed", key="home_year_selector")
+
+month_list = fu.month_list()
+month_growth_list = []
+for i in range(1, 13):
+    date = fu.get_date(year, i)
+    prev_date = fu.prev_date(date)
+    net_growth = context.query_total_worth(date) - context.query_total_worth(prev_date)
+    net_growth = round(net_growth, 1)
+    month_growth_list.append(net_growth)
+total_net_growth = round(sum(month_growth_list), 1)
+st.write(f"Total net growth: {fu.gen_txt_with_color_and_arrow(total_net_growth)}")
+
+candidate_txt_list = [f"# {m}\n{fu.gen_txt_with_color_and_arrow(profit)}" for m, profit in zip(month_list, month_growth_list)]
+selected_txt_list = [f"# {m}\n{fu.gen_txt_with_arrow(profit)}" for m, profit in zip(month_list, month_growth_list)]
+month = fw.button_selector("home_month_selector", candidate_txt_list, 6, fu.cur_month() - 1, selected_txt_list) + 1
+selected_date = fu.get_date(year, month)
+
+# selected_date = g.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed", key="home_select_date_slider")
+# g.button("<", use_container_width=True, key="home_select_date_slider_previous_button", on_click=update_selected_date, args=(True,))
+# g.button("\>", use_container_width=True, key="home_select_date_slider_next_button", on_click=update_selected_date, args=(False,))
 
 total_worth = context.query_total_worth(selected_date)
 prev_date = fu.prev_date(selected_date)
@@ -60,21 +80,11 @@ previous_worth = context.query_total_worth(prev_date)
 net_growth = total_worth - previous_worth
 total_profit = context.query_total_profit(selected_date)
 
-# col1, col2 = st.columns(2)
-# with col1:
-# st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")
-#
-# with col2:
-# growth_color = ":green-background" if net_growth >= 0 else ":red-background"
-# st.write(f"### Net growth: {growth_color}[{net_growth:,.1f}]")
-
 col1, col2 = st.columns(2)
 with col1:
     allocation_pie = context.allocation_pie(selected_date)
     st.plotly_chart(allocation_pie, theme="streamlit", use_container_width=True)
 with col2:
-    st.write("###  ")
-    st.write("###  ")
     st.write("###  ")
     st.write(f"### DATE: :grey-background[{selected_date}]")
     st.write(f"### Total worth: :blue-background[{total_worth:,.1f}]")

@@ -73,3 +73,21 @@ def incre_str(s: str) -> str:
 
 def norm_number(v, digits: int = 2):
     return round(v, digits)
+
+
+def month_list() -> list[str]:
+    return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def gen_txt_with_arrow(num: int):
+    if num > 0:
+        return f"▲ {num}"
+    else:
+        return f"▼ {num}"
+
+
+def gen_txt_with_color_and_arrow(num: int):
+    if num > 0:
+        return f":red[▲ {num}]"
+    else:
+        return f":green[▼ {num}]"

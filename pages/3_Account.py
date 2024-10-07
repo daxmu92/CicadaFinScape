@@ -5,7 +5,7 @@ import sys
 import re
 from streamlit_extras.grid import grid
 from streamlit_pills import pills
-# from st_aggrid import AgGrid, GridOptionsBuilder
+import plotly.express as px
 
 sys.path.append("..")
 
@@ -54,7 +54,7 @@ tabs = st.tabs(["Overview", "Add/Update Record"])
 
 with tabs[0]:
     data_df = context.query_asset_df(selected_acc, sub)
-    data_df.sort_values("DATE", ascending=False, inplace=True)
+    data_df = data_df.sort_values("DATE", ascending=False)
     cols = st.columns([8, 8])
     df = data_df.round(1)
     with cols[0]:
@@ -62,9 +62,17 @@ with tabs[0]:
     with cols[1]:
         kind = {"NET_WORTH": "NET_WORTH", "INFLOW": "INFLOW", "PROFIT": "PROFIT"}
         kind_sel = st.selectbox("Select kind", kind.keys(), label_visibility="collapsed")
-        chart = alt.Chart(df).mark_line().encode(x="DATE", y=kind[kind_sel])
-        st.altair_chart(chart, use_container_width=True)
-        pass
+        fig = px.line(df, x="DATE", y=kind[kind_sel], line_shape="spline")
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title=kind_sel,
+            # Hide plotly buttons
+            updatemenus=[],
+            showlegend=False,
+            margin=dict(t=10, b=10, l=10, r=10),  # Adjust top margin
+            height=400  # Adjust overall height of the chart
+        )
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 with tabs[1]:
     date = fw.year_month_selector_oneline()
     last_row: pd.DataFrame = context.query_last_asset(date, acc, sub)

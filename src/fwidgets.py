@@ -495,7 +495,7 @@ def load_acc_config_from_json_dia():
         st.warning("You need to upload a config json file")
 
 
-def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4, default: int = 0) -> int:
+def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4, default: int = 0, selected_txt: Sequence[str] = []) -> int:
 
     def get_selected_index() -> int:
         if key not in st.session_state:
@@ -509,20 +509,27 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
         st.session_state[key] = index
         st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
 
+    if selected_txt:
+        assert len(selected_txt) == len(candidate_list)
+
     num = len(candidate_list)
     grid_numbers = [col_number] * (num // col_number + 1)
     g: st = grid(*grid_numbers)
 
     for index, name in enumerate(candidate_list):
-        t = "primary" if index == get_selected_index() else "secondary"
         button_key = f"{key}_{name}"
+        t = "secondary"
+        button_txt = name
+        if index == get_selected_index():
+            t = "primary"
+            if selected_txt:
+                button_txt = selected_txt[index]
         st.session_state[button_key] = f"{button_key}_value_0"
-        g.button(name, key=st.session_state[button_key], use_container_width=True, type=t, on_click=set_selected, args=(index, button_key))
+        g.button(button_txt, key=st.session_state[button_key], use_container_width=True, type=t, on_click=set_selected, args=(index, button_key))
 
     return get_selected_index()
 
 
 def month_selector(key: str, col_number=4, default: int = 1) -> int:
     assert default in range(1, 13)
-    month_list = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    return button_selector(key, month_list, col_number, default - 1) + 1
+    return button_selector(key, fu.month_list(), col_number, default - 1) + 1
