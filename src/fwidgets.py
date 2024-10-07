@@ -193,7 +193,7 @@ def load_from_zipped_dia():
     context: FinContext = st.session_state['context']
     upload_file = st.file_uploader("Choose a zip file")
     if upload_file is not None:
-        file_list = ["asset.csv", "flow.csv", "config.json"]
+        file_list = ["asset.txt", "flow.txt", "config.json"]
         with zipfile.ZipFile(upload_file, "r") as z:
             files = z.namelist()
             for f in file_list:
@@ -495,7 +495,7 @@ def load_acc_config_from_json_dia():
         st.warning("You need to upload a config json file")
 
 
-def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4, default: int = 0, selected_txt: Sequence[str] = []) -> int:
+def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4, default: int = 0, selected_txt : Sequence[str] = []) -> int:
 
     def get_selected_index() -> int:
         if key not in st.session_state:
@@ -508,7 +508,7 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
     def set_selected(index: int, button_key: str):
         st.session_state[key] = index
         st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
-
+    
     if selected_txt:
         assert len(selected_txt) == len(candidate_list)
 
