@@ -126,13 +126,13 @@ class FinDataSQL:
         execute_str = f"INSERT INTO {table.name()} ({key_str}) VALUES ({value_str});"
         self.exec(execute_str)
 
-    def sql_placeholder_and_values(filter: dict, table: SQLTableDef) -> tuple[str, list]:
+    def sql_placeholder_and_values(filter: dict, table: SQLTableDef, delimiter: str = "AND") -> tuple[str, list]:
         cmd_placeholder = ""
         values = []
         i = 0
         for k, v in filter.items():
             if i != 0:
-                cmd_placeholder += " AND "
+                cmd_placeholder += f" {delimiter} "
             cmd_placeholder += f"{k} = ?"
 
             assert k in table.cols_name(), f"{k} is not in {table.cols_name()}"
@@ -153,8 +153,8 @@ class FinDataSQL:
         return cmd
 
     def update_data(self, filter: dict, data: dict, table: SQLTableDef):
-        where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table)
-        set_ph, set_values = FinDataSQL.sql_placeholder_and_values(data, table)
+        where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table, "AND")
+        set_ph, set_values = FinDataSQL.sql_placeholder_and_values(data, table, ",")
         cmd_str = f'''UPDATE {table.name()} SET {set_ph} WHERE {where_ph}'''
         values = tuple(set_values + where_values)
         self.exec_value(cmd_str, values)
@@ -167,7 +167,7 @@ class FinDataSQL:
             self.insert_data(d, table)
 
     def query_data(self, filter: dict, table: SQLTableDef) -> list:
-        ph, values = FinDataSQL.sql_placeholder_and_values(filter, table)
+        ph, values = FinDataSQL.sql_placeholder_and_values(filter, table, "AND")
         cmd_str = f'''SELECT * FROM {table.name()} WHERE {ph}'''
         return self.exec_value(cmd_str, values).fetchall()
 
@@ -188,7 +188,7 @@ class FinDataSQL:
 
         values = []
         if filter:
-            where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table)
+            where_ph, where_values = FinDataSQL.sql_placeholder_and_values(filter, table, "AND")
             cmd_str = f'''SELECT * FROM {table.name()} WHERE {period_cmd} AND {where_ph}'''
             values += where_values
         else:
