@@ -54,19 +54,16 @@ cur_year = fu.cur_year()
 index = fw.get_year_list().index(cur_year)
 year = st.selectbox("Select year", fw.get_year_list(), index=index, label_visibility="collapsed", key="home_year_selector")
 
-month_list = fu.month_list()
-month_growth_list = []
-for i in range(1, 13):
-    date = fu.get_date(year, i)
-    prev_date = fu.prev_date(date)
-    net_growth = context.query_total_worth(date) - context.query_total_worth(prev_date)
-    net_growth = round(net_growth, 1)
-    month_growth_list.append(net_growth)
-total_net_growth = round(sum(month_growth_list), 1)
+year_data = context.query_period_data(fu.prev_date(fu.get_date(year, 1)), fu.get_date(year, 12), fill_missing=True)
+year_data["NET_GROWTH"] = year_data["NET_WORTH"].diff()
+year_data = year_data.groupby("DATE").sum().reindex()
+net_growth_list = [round(x, 1) for x in year_data["NET_GROWTH"].tolist()[1:]]
+total_net_growth = round(sum(net_growth_list), 1)
 st.write(f"Total net growth: {fu.gen_txt_with_color_and_arrow(total_net_growth)}")
 
-candidate_txt_list = [f"# {m}\n{fu.gen_txt_with_color_and_arrow(profit)}" for m, profit in zip(month_list, month_growth_list)]
-selected_txt_list = [f"# {m}\n{fu.gen_txt_with_arrow(profit)}" for m, profit in zip(month_list, month_growth_list)]
+month_list = fu.month_list()
+candidate_txt_list = [f"# {m}\n{fu.gen_txt_with_color_and_arrow(profit)}" for m, profit in zip(month_list, net_growth_list)]
+selected_txt_list = [f"# {m}\n{fu.gen_txt_with_arrow(profit)}" for m, profit in zip(month_list, net_growth_list)]
 month = fw.button_selector("home_month_selector", candidate_txt_list, 6, fu.cur_month() - 1, selected_txt_list) + 1
 selected_date = fu.get_date(year, month)
 

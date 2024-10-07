@@ -34,7 +34,7 @@ class FinContext:
     def reset_tran(self):
         self.data.reset_tran_table()
 
-    def combine_acc_ass(df):
+    def combine_acc_ass(df: pd.DataFrame) -> pd.DataFrame:
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         return df
 
@@ -47,7 +47,7 @@ class FinContext:
     def query_tran_info(self) -> pd.DataFrame:
         return self.data.query_tran_info()
 
-    def query_subacc_by_date(self, date, acc, sub, use_pre_net_if_not_exist=True) -> pd.DataFrame:
+    def query_subacc_by_date(self, date: str, acc: str, sub: str, use_pre_net_if_not_exist: bool = True) -> pd.DataFrame:
         df: pd.DataFrame = self.data.query_asset(date, acc, sub)
         if not df.empty:
             return df
@@ -57,7 +57,7 @@ class FinContext:
             df.loc[df["DATE"] != date, "PROFIT"] = 0
         return df
 
-    def query_date(self, date, use_pre_net_if_not_exist=True) -> pd.DataFrame:
+    def query_date(self, date: str, use_pre_net_if_not_exist: bool = True) -> pd.DataFrame:
         if not use_pre_net_if_not_exist:
             return self.data.query_asset(date)
 
@@ -68,20 +68,46 @@ class FinContext:
                 df = pd.concat([df, data])
         return df
 
-    def query_total_worth(self, date) -> float:
+    def query_total_worth(self, date: str) -> float:
         return self.query_date(date, True)["NET_WORTH"].sum()
 
-    def query_total_profit(self, date) -> float:
+    def query_total_profit(self, date: str) -> float:
         return self.query_date(date, True)["PROFIT"].sum()
 
-    def query_total_inflow(self, date) -> float:
+    def query_total_inflow(self, date: str) -> float:
         return self.query_date(date, True)["INFLOW"].sum()
 
-    def query_last_asset(self, date, acc, sub) -> pd.DataFrame:
+    def query_last_asset(self, date: str, acc: str, sub: str) -> pd.DataFrame:
         return self.data.query_last_asset(date, acc, sub)
 
-    def query_period_data(self, start_date, end_date) -> pd.DataFrame:
-        return self.data.query_period_asset(start_date, end_date)
+    def query_period_data(self, start_date: str, end_date: str, fill_missing: bool = False) -> pd.DataFrame:
+        if not fill_missing:
+            return self.data.query_period_asset(start_date, end_date)
+
+        def fill_missing_date(df: pd.DataFrame):
+            # fill missing date, fill missing "NET_WORTH" with previous's "NET_WORTH"
+            # fill missing profit and inflow with 0
+            s, e = self.get_date_range()
+            date_range = fu.date_list(s, e)
+            df = df.set_index('DATE')
+            df = df.reindex(date_range)
+            df['NET_WORTH'] = df['NET_WORTH'].ffill()
+            df['ACCOUNT'] = df['ACCOUNT'].ffill()
+            df['SUBACCOUNT'] = df['SUBACCOUNT'].ffill()
+            df['PROFIT'] = df['PROFIT'].fillna(0)
+            df['INFLOW'] = df['INFLOW'].fillna(0)
+            df = df.reset_index().rename(columns={'index': 'DATE'})
+            return df
+
+        df_list = []
+        for acc in self.config.acc:
+            for sub in self.config.acc[acc].sub_name_list():
+                sub_df = self.data.query_asset(acc=acc, sub=sub)
+                sub_df = fill_missing_date(sub_df)
+                df_list.append(sub_df)
+        df = pd.concat(df_list)
+        df = df[df["DATE"].between(start_date, end_date)]
+        return df
 
     def get_date_range(self) -> tuple[str, str]:
         return self.data.query_date_range()
