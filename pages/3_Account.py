@@ -25,7 +25,8 @@ if not (fw.check_account() and fw.check_subaccount() and fw.check_database()):
 
 ACC_KEY = "account_test_acc"
 
-selected_acc = fw.button_selector(ACC_KEY, acc_name_list)
+selected_acc_index = fw.button_selector(ACC_KEY, acc_name_list)
+selected_acc = acc_name_list[selected_acc_index]
 
 acc = selected_acc
 sub_name_list = context.config.subacc_name_list(selected_acc)
@@ -51,21 +52,17 @@ tab_css = '''
 st.markdown(tab_css, unsafe_allow_html=True)
 tabs = st.tabs(["Overview", "Add/Update Record"])
 
-# if st.toggle("Add/Update record", key=f"add_or_update_record_toggle_{acc}"):
 with tabs[0]:
     data_df = context.query_asset_df(selected_acc, sub)
     data_df.sort_values("DATE", ascending=False, inplace=True)
-    # st.table(data_df)
     cols = st.columns([8, 8])
     df = data_df.round(1)
     with cols[0]:
-        st.dataframe(df, use_container_width=True)
-        # gb = GridOptionsBuilder.from_dataframe(df)
-        # gb.configure_default_column(headerClass='header-class', editable=False)
-        # gridOptions = gb.build()
-        # AgGrid(df, gridOptions=gridOptions, theme="balham", fit_columns_on_grid_load=True)
+        st.dataframe(df, use_container_width=True, hide_index=True)
     with cols[1]:
-        chart = alt.Chart(df).mark_line().encode(x="DATE", y="NET_WORTH")
+        kind = {"NET_WORTH": "NET_WORTH", "INFLOW": "INFLOW", "PROFIT": "PROFIT"}
+        kind_sel = st.selectbox("Select kind", kind.keys(), label_visibility="collapsed")
+        chart = alt.Chart(df).mark_line().encode(x="DATE", y=kind[kind_sel])
         st.altair_chart(chart, use_container_width=True)
         pass
 with tabs[1]:

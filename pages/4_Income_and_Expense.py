@@ -14,7 +14,14 @@ st.set_page_config(page_title="Income and Expense")
 st.title("Income and Expense")
 st.divider()
 
-tran_df = context.query_tran()
+cur_year = fu.cur_year()
+index = fw.get_year_list().index(cur_year)
+year = st.selectbox("Select year", fw.get_year_list(), index=index, label_visibility="collapsed")
+month = fw.month_selector("income_and_expense_month_selector", 6, fu.cur_month())
+
+date = fu.get_date(year, month)
+
+tran_df = context.query_tran(date)
 enable_edit = st.toggle("Edit", False, key="income_and_expense_toggle")
 if enable_edit:
     col_configs = {k: st.column_config.TextColumn(k, disabled=False) for k in tran_df.columns}

@@ -90,7 +90,7 @@ def editable_accounts(df=None, key=0, container_width=False):
     return st.data_editor(df, hide_index=True, column_config=col_config, key=key, use_container_width=container_width)
 
 
-def year_selector(key="year_selector_0", container=st):
+def year_selector(key: str = "year_selector_0", container=st):
     year_list = list(range(2000, 2100))
     cur_year = fu.cur_year()
     index = 0
@@ -110,8 +110,7 @@ def month_radio(key="month_radio_0", container=st):
 def year_month_selector(key=0, container=st):
     year = year_selector(key=f"add_asset_dia_year_{key}", container=container)
     month = month_radio(key=f"add_asset_dia_month_{key}", container=container)
-    date = pd.Period(year=year, month=month, freq="M").strftime("%Y-%m")
-    return date
+    return fu.get_date(year, month)
 
 
 def year_month_selector_oneline(key=0):
@@ -371,7 +370,7 @@ def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
 
 
 @st.dialog("ADD OR UPDATE SUBACCOUNT RECORD")
-def insert_or_update_record_dia(acc, sub):
+def insert_or_update_record_dia(acc: str, sub: str):
     date = year_month_selector()
 
     context: FinContext = st.session_state["context"]
@@ -389,11 +388,11 @@ def insert_or_update_record_dia(acc, sub):
 
 
 @st.dialog("DELETE SUBACCOUNT")
-def delete_subaccount_dia(acc_name, sub_name):
+def delete_subaccount_dia(acc: str, sub: str):
     st.write(f"## WARNING!")
-    st.write(f"**You are DELETING your asset {sub_name} under {acc_name}, this will clear your data in database**")
+    st.write(f"**You are DELETING your asset {sub} under {acc}, this will clear your data in database**")
 
-    if st.button("DELETE", key="delete_dialog_delete", on_click=FinContext.delete_asset, args=(st.session_state["context"], acc_name, sub_name)):
+    if st.button("DELETE", key="delete_dialog_delete", on_click=FinContext.delete_asset, args=(st.session_state["context"], acc, sub)):
         st.rerun()
 
     if st.button("Cancel", key="delete_dialog_cancel", type="primary"):
@@ -401,10 +400,10 @@ def delete_subaccount_dia(acc_name, sub_name):
 
 
 @st.dialog("DELETE SELECTED DATA")
-def delete_selected_data_dia(acc_name, sub_name, date_list: list):
+def delete_selected_data_dia(acc: str, sub: str, date_list: list[str]):
     context: FinContext = st.session_state["context"]
     st.write(f"## WARNING!")
-    st.write(f"**You are DELETING your data under asset {sub_name}, this will remove your data in database**")
+    st.write(f"**You are DELETING your data under asset {sub}, this will remove your data in database**")
     date_list_str = ", ".join(date_list)
     st.write(f"Date will be removed: {date_list_str}")
 
@@ -412,7 +411,7 @@ def delete_selected_data_dia(acc_name, sub_name, date_list: list):
     with col1:
         if st.button("DELETE", key="delete_dialog_delete", use_container_width=True):
             for date in date_list:
-                context.delete_asset_data(date, acc_name, sub_name)
+                context.delete_asset_data(date, acc, sub)
             st.rerun()
 
     with col2:
@@ -420,7 +419,7 @@ def delete_selected_data_dia(acc_name, sub_name, date_list: list):
             st.rerun()
 
 
-def get_st_color_str_by_pos(value, pos_color="green", neg_color="red"):
+def get_st_color_str_by_pos(value, pos_color: str = "green", neg_color: str = "red") -> str:
     color = f":{pos_color}-background" if value >= 0 else f":{neg_color}-background"
     return color
 
@@ -466,12 +465,19 @@ def delete_selected_money_flow_dia(id_list: list[int]):
             st.rerun()
 
 
-def get_date_list():
+def get_date_list() -> list[str]:
     context: FinContext = st.session_state["context"]
     cur_date = fu.norm_date(fu.cur_date())
     s, e = context.get_date_range()
     date_list = fu.date_list(s, max(cur_date, e))
     return date_list
+
+
+def get_year_list() -> list[int]:
+    context: FinContext = st.session_state["context"]
+    s, e = context.get_date_range()
+    year_list = fu.year_list(s, e)
+    return year_list
 
 
 @st.dialog("Load Accounts config from json file")
@@ -489,29 +495,34 @@ def load_acc_config_from_json_dia():
         st.warning("You need to upload a config json file")
 
 
-def button_selector(key: str, candidate_list: Sequence):
+def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4, default: int = 0) -> int:
 
-    def get_selected():
+    def get_selected_index() -> int:
         if key not in st.session_state:
-            st.session_state[key] = 0
+            st.session_state[key] = default
         index = st.session_state.get(key)
         if index not in range(len(candidate_list)):
-            index = 0
-        return candidate_list[index]
+            index = default
+        return index
 
-    def set_selected(index, button_key):
+    def set_selected(index: int, button_key: str):
         st.session_state[key] = index
         st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
 
     num = len(candidate_list)
-    GRID_COL_NUMBER = 4
-    grid_numbers = [GRID_COL_NUMBER] * (num // GRID_COL_NUMBER + 1)
+    grid_numbers = [col_number] * (num // col_number + 1)
     g: st = grid(*grid_numbers)
 
     for index, name in enumerate(candidate_list):
-        t = "primary" if name == get_selected() else "secondary"
+        t = "primary" if index == get_selected_index() else "secondary"
         button_key = f"{key}_{name}"
         st.session_state[button_key] = f"{button_key}_value_0"
         g.button(name, key=st.session_state[button_key], use_container_width=True, type=t, on_click=set_selected, args=(index, button_key))
 
-    return get_selected()
+    return get_selected_index()
+
+
+def month_selector(key: str, col_number=4, default: int = 1) -> int:
+    assert default in range(1, 13)
+    month_list = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    return button_selector(key, month_list, col_number, default - 1) + 1
