@@ -1,3 +1,4 @@
+from typing import Sequence
 import streamlit as st
 import warnings
 import json
@@ -486,3 +487,31 @@ def load_acc_config_from_json_dia():
         st.json(config, expanded=True)
     else:
         st.warning("You need to upload a config json file")
+
+
+def button_selector(key: str, candidate_list: Sequence):
+
+    def get_selected():
+        if key not in st.session_state:
+            st.session_state[key] = 0
+        index = st.session_state.get(key)
+        if index not in range(len(candidate_list)):
+            index = 0
+        return candidate_list[index]
+
+    def set_selected(index, button_key):
+        st.session_state[key] = index
+        st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
+
+    num = len(candidate_list)
+    GRID_COL_NUMBER = 4
+    grid_numbers = [GRID_COL_NUMBER] * (num // GRID_COL_NUMBER + 1)
+    g: st = grid(*grid_numbers)
+
+    for index, name in enumerate(candidate_list):
+        t = "primary" if name == get_selected() else "secondary"
+        button_key = f"{key}_{name}"
+        st.session_state[button_key] = f"{button_key}_value_0"
+        g.button(name, key=st.session_state[button_key], use_container_width=True, type=t, on_click=set_selected, args=(index, button_key))
+
+    return get_selected()

@@ -222,7 +222,7 @@ class FinTranData(FinBaseData):
 
     def get_unique_id(self, date: str) -> int:
         df_date = self._df[self._df["DATE"] == date]
-        max_id_by_date = df_date["ID"].max() if not df_date.empty else 0
+        max_id_by_date = df_date["ID"].max() % 10000 + 1 if not df_date.empty else 0
         digit_date = fu.digit_date(date)
         return digit_date * 10000 + max_id_by_date
 
