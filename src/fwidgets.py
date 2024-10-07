@@ -511,6 +511,8 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
     
     if selected_txt:
         assert len(selected_txt) == len(candidate_list)
+    else:
+        selected_txt = candidate_list
 
     num = len(candidate_list)
     grid_numbers = [col_number] * (num // col_number + 1)
@@ -522,8 +524,7 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
         button_txt = name
         if index == get_selected_index():
             t = "primary"
-            if selected_txt:
-                button_txt = selected_txt[index]
+            button_txt = selected_txt[index]
         st.session_state[button_key] = f"{button_key}_value_0"
         g.button(button_txt, key=st.session_state[button_key], use_container_width=True, type=t, on_click=set_selected, args=(index, button_key))
 

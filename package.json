@@ -8,7 +8,7 @@
     "dump": "dump-stlite-desktop-artifacts",
     "serve": "cross-env NODE_ENV=production electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
+    "dist": "electron-builder --publish never",
     "postinstall": "electron-builder install-app-deps",
     "rebuild": "electron-rebuild -f -w sqlite3 -p"
   },
@@ -16,6 +16,11 @@
     "files": ["build/**/*"],
     "directories": {
       "buildResources": "assets"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "daxmu92",
+      "repo": "cicada-fin-scape"
     }
   },
   "devDependencies": {
