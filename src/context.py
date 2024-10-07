@@ -160,28 +160,28 @@ class FinContext:
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip:
             asset_buffer = io.BytesIO(self.get_asset_data())
-            zip.writestr("asset.csv", asset_buffer.getvalue())
+            zip.writestr("asset.txt", asset_buffer.getvalue())
             tran_buffer = io.BytesIO(self.get_tran_data())
-            zip.writestr("flow.csv", tran_buffer.getvalue())
+            zip.writestr("flow.txt", tran_buffer.getvalue())
             zip.writestr("config.json", self.config.to_json())
         return zip_buffer.getvalue()
 
     def load_from_zip_data(self, file):
         with zipfile.ZipFile(file, "r") as z:
             files = z.namelist()
-            assert "asset.csv" in files and "flow.csv" in files and "config.json" in files
+            assert "asset.txt" in files and "flow.txt" in files and "config.json" in files
 
             with z.open("config.json") as config:
                 self.config.load_from_dict(json.load(config))
                 self.config.write_config()
 
-            with z.open("asset.csv") as asset_file:
+            with z.open("asset.txt") as asset_file:
                 data_df = pd.read_csv(asset_file)
                 valid, err_msg = self.verify_asset_df(data_df)
                 FinLogger.expect_and_stop(valid, err_msg)
                 self.data.df_to_asset(data_df)
 
-            with z.open("flow.csv") as flow_file:
+            with z.open("flow.txt") as flow_file:
                 flow_df = pd.read_csv(flow_file)
                 self.data.df_to_tran(flow_df)
 
