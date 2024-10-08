@@ -38,8 +38,8 @@ class FinContext:
         df["SUBACCOUNT"] = df['ACCOUNT'] + '-' + df['SUBACCOUNT']
         return df
 
-    def query_asset_df(self, acc: str, sub: str) -> pd.DataFrame:
-        return self.data.query_asset(acc=acc, sub=sub)
+    def query_asset(self, date: str = "", acc: str = "", sub: str = "") -> pd.DataFrame:
+        return self.data.query_asset(date, acc, sub)
 
     def query_asset_info(self) -> pd.DataFrame:
         return self.data.query_asset_info()
@@ -157,6 +157,9 @@ class FinContext:
 
     def query_tran(self, date: str = "", type: str = "", cat: str = "") -> pd.DataFrame:
         return self.data.query_tran(date, type, cat)
+
+    def reindex_tran_id(self):
+        self.data.reindex_tran_id()
 
     def df_to_tran(self, df: pd.DataFrame, append: bool = False):
         self.data.df_to_tran(df, append)

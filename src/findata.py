@@ -226,6 +226,16 @@ class FinTranData(FinBaseData):
         digit_date = fu.digit_date(date)
         return digit_date * 10000 + max_id_by_date
 
+    def reindex(self):
+        df = self._df.copy()
+        self._df = pd.DataFrame(columns=self._table.cols_name())
+        for _, row in df.iterrows():
+            date = row["DATE"]
+            id = self.get_unique_id(date)
+            row["ID"] = id
+            self._df = pd.concat([self._df, row.to_frame().T], ignore_index=True)
+        print(self._df)
+        self.load_from_df(self._df)
 
 class FinDataContext():
 
@@ -324,3 +334,6 @@ class FinDataContext():
 
     def df_to_tran(self, df: pd.DataFrame, append: bool = False):
         self.tran_data.load_from_df(df, append)
+
+    def reindex_tran_id(self):
+        self.tran_data.reindex()

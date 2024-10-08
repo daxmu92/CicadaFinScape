@@ -55,7 +55,19 @@ else:
         if st.button("**Delet selected record**", key="delete_money_flow_button", use_container_width=True):
             fw.delete_selected_money_flow_dia(id_list)
 
-io_df = context.income_outlay_df()
-io_df = io_df.sort_values("DATE", ascending=False)
-df = io_df.style.format(precision=1)
-st.table(df)
+st.divider()
+total_income = tran_df[tran_df["TYPE"] == "INCOME"]["VALUE"].sum()
+tracked_outlay = tran_df[tran_df["TYPE"] == "OUTLAY"]["VALUE"].sum()
+total_inflow = context.query_total_inflow(date)
+total_outlay = total_income - total_inflow
+untracked_outlay = total_outlay - tracked_outlay
+
+st.write(f"Total income: {total_income}")
+st.write(f"Tracked outlay: {tracked_outlay}")
+st.write(f"Untracked outlay: {untracked_outlay}")
+st.write(f"Total outlay: {total_outlay}")
+
+#io_df = context.income_outlay_df()
+#io_df = io_df.sort_values("DATE", ascending=False)
+#df = io_df.style.format(precision=1)
+#st.table(df)

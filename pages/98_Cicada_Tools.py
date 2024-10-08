@@ -70,3 +70,8 @@ if g_query_table.button("**Query table info**", key="query_table_info_button", u
         st.write(context.query_asset_info())
     else:
         st.write(context.query_tran_info())
+
+st.write("#### Tools")
+g_tools: st = grid(2, vertical_align="bottom")
+if g_tools.button("**Reset tran ID**", key="reset_tran_id_button", use_container_width=True):
+    fw.confirm_dia(FinContext.reindex_tran_id, (context,), "You are reseting your tran ID")

@@ -25,7 +25,7 @@ if not (fw.check_account() and fw.check_subaccount() and fw.check_database()):
 
 ACC_KEY = "account_test_acc"
 
-selected_acc_index = fw.button_selector(ACC_KEY, acc_name_list)
+selected_acc_index = fw.button_selector(ACC_KEY, acc_name_list, 6)
 selected_acc = acc_name_list[selected_acc_index]
 
 acc = selected_acc
@@ -53,7 +53,7 @@ st.markdown(tab_css, unsafe_allow_html=True)
 tabs = st.tabs(["Overview", "Add/Update Record"])
 
 with tabs[0]:
-    data_df = context.query_asset_df(selected_acc, sub)
+    data_df = context.query_asset(acc=selected_acc, sub=sub)
     data_df = data_df.sort_values("DATE", ascending=False)
     cols = st.columns([8, 8])
     df = data_df.round(1)
