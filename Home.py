@@ -5,6 +5,7 @@ from streamlit_extras.grid import grid
 
 from src.context import FinContext
 import src.fwidgets as fw
+import src.finchart as fc
 import src.finutils as fu
 
 st.set_page_config(page_title="Cicada Financial Scape", page_icon=":clipboard:", layout="wide")
@@ -75,8 +76,8 @@ total_profit = context.query_total_profit(selected_date)
 
 col1, col2 = st.columns(2)
 with col1:
-    allocation_pie = context.allocation_pie(selected_date)
-    st.plotly_chart(allocation_pie, theme="streamlit", use_container_width=True)
+    allocation_pie = fc.allocation_pie(context.query_date(selected_date, True))
+    st.plotly_chart(allocation_pie, use_container_width=True)
 with col2:
     st.write("###  ")
     st.write(f"### DATE: :grey-background[{selected_date}]")

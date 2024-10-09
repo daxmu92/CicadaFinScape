@@ -1,6 +1,32 @@
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+import streamlit as st
+from palettable.colorbrewer.qualitative import Pastel1_9, Set3_12, Pastel2_8
+
+
+def allocation_pie(df: pd.DataFrame) -> go.Figure:
+    unsaturated_colors = px.colors.qualitative.Pastel
+    morandi_like_colors = Pastel1_9.hex_colors[1:] + Pastel1_9.hex_colors[:1] + Pastel2_8.hex_colors
+    colors = morandi_like_colors + unsaturated_colors
+    df = df.sort_values(by="NET_WORTH", ascending=False)
+    labels = [f"{a}-{s}" if a != s else s for a, s in zip(df["ACCOUNT"], df["SUBACCOUNT"])]
+    fig = go.Figure(
+        go.Pie(labels=labels,
+               values=df["NET_WORTH"],
+               textposition='inside',
+               textinfo='label+value+percent',
+               hoverinfo='label+value+percent',
+               showlegend=True,
+               marker=dict(colors=colors)))
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5),
+        width=400,
+        height=600,
+    )
+    fig.update_traces(textfont_size=12)
+    return fig
 
 
 def io_flow_chart(tran_df: pd.DataFrame, total_inflow: float) -> tuple[go.Figure, dict]:
@@ -16,10 +42,10 @@ def io_flow_chart(tran_df: pd.DataFrame, total_inflow: float) -> tuple[go.Figure
     values = [total_income, -tracked_outlay, -untracked_outlay, total_inflow]
 
     # Create the main waterfall chart
-    unsaturated_colors = px.colors.qualitative.Pastel
-    unsaturated_blue = "#7f7fbf"
-    unsaturated_green = "#7fbf7f"
-    unsaturated_red = "#cf6f6f"
+    unsaturated_colors = Pastel2_8.hex_colors
+    unsaturated_red = Pastel1_9.hex_colors[0]
+    unsaturated_blue = Pastel1_9.hex_colors[1]
+    unsaturated_green = Pastel1_9.hex_colors[2]
     width = 0.7
     fig = go.Figure(
         go.Waterfall(

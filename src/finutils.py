@@ -79,14 +79,14 @@ def month_list() -> list[str]:
     return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
-def gen_txt_with_arrow(num: int):
+def gen_txt_with_arrow(num):
     if num > 0:
         return f"▲ {num}"
     else:
         return f"▼ {num}"
 
 
-def gen_txt_with_color_and_arrow(num: int):
+def gen_txt_with_color_and_arrow(num):
     if num > 0:
         return f":red[▲ {num}]"
     else:

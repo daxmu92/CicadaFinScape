@@ -231,14 +231,6 @@ class FinContext:
         fig = px.area(df, x="DATE", y="NET_WORTH", color="ACCOUNT", line_group="SUBACCOUNT")
         return fig
 
-    def allocation_pie(self, date=None):
-        date = self.get_latest_date() if date is None else date
-        df = self.query_date(date, True)
-        fig = go.Figure(
-            go.Pie(labels=df["ACCOUNT"] + "-" + df["SUBACCOUNT"], values=df["NET_WORTH"], textinfo='label+value+percent', showlegend=False))
-        fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
-        return fig
-
     def category_pie(self, cat: str, date: str = None):
 
         def is_valid_data(row):
