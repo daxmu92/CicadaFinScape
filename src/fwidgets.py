@@ -508,7 +508,7 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
     def set_selected(index: int, button_key: str):
         st.session_state[key] = index
         st.session_state[button_key] = fu.incre_str(st.session_state[button_key])
-    
+
     if selected_txt:
         assert len(selected_txt) == len(candidate_list)
     else:
@@ -533,4 +533,4 @@ def button_selector(key: str, candidate_list: Sequence[str], col_number: int = 4
 
 def month_selector(key: str, col_number=4, default: int = 1) -> int:
     assert default in range(1, 13)
-    return button_selector(key, fu.month_list(), col_number, default - 1) + 1
+    return button_selector(key, fu.month_list(), col_number, default - 1, fu.month_list()) + 1

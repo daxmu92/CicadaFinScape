@@ -67,10 +67,6 @@ selected_txt_list = [f"# {m}\n{fu.gen_txt_with_arrow(profit)}" for m, profit in 
 month = fw.button_selector("home_month_selector", candidate_txt_list, 6, fu.cur_month() - 1, selected_txt_list) + 1
 selected_date = fu.get_date(year, month)
 
-# selected_date = g.select_slider("Select a Date", options=date_list, value=cur_date, label_visibility="collapsed", key="home_select_date_slider")
-# g.button("<", use_container_width=True, key="home_select_date_slider_previous_button", on_click=update_selected_date, args=(True,))
-# g.button("\>", use_container_width=True, key="home_select_date_slider_next_button", on_click=update_selected_date, args=(False,))
-
 total_worth = context.query_total_worth(selected_date)
 prev_date = fu.prev_date(selected_date)
 previous_worth = context.query_total_worth(prev_date)
