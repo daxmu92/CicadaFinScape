@@ -158,6 +158,9 @@ class FinContext:
     def query_tran(self, date: str = "", type: str = "", cat: str = "") -> pd.DataFrame:
         return self.data.query_tran(date, type, cat)
 
+    def get_tran_tags(self) -> list[str]:
+        return self.data.get_tran_tags()
+
     def reindex_tran_id(self):
         self.data.reindex_tran_id()
 

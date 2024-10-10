@@ -429,16 +429,34 @@ def get_st_color_str_by_pos(value, pos_color: str = "green", neg_color: str = "r
     return color
 
 
-@st.dialog("ADD A MONEY FLOW")
-def add_money_flow_dia():
+def clear_add_money_flow_dia_state():
+    st.session_state["add_money_flow_new_tags"] = []
+    st.session_state["add_money_flow_new_tags_text_input"] = ""
+
+
+@st.dialog("ADD A MONEY FLOW", width="large")
+def add_money_flow_dia(date: str):
     context: FinContext = st.session_state["context"]
-    date = year_month_selector()
     tran_type = st.selectbox("Type", ["INCOME", "OUTLAY"], key="add_money_flow_type_input")
     value = st.number_input("Value", key="add_money_flow_number_input")
-    cat = st.text_input("Category", key="add_money_flow_cat_input")
+    tag_candidates = context.get_tran_tags()
+    tags = st.multiselect("Tags", tag_candidates, key="add_money_flow_cat_input")
+
+    if "add_money_flow_new_tags" not in st.session_state:
+        st.session_state["add_money_flow_new_tags"] = []
+    new_tags: list[str] = st.session_state["add_money_flow_new_tags"]
+    g: st = grid([3, 1], vertical_align="bottom")
+    new_tag = g.text_input("New tags", key="add_money_flow_new_tags_text_input")
+    if g.button("Add", key="add_money_flow_new_tags_add_button", use_container_width=True):
+        new_tags.append(new_tag)
+    st.write("Tags will be added: ", ", ".join(new_tags))
+
     note = st.text_input("Note", key="add_money_flow_note_input")
-    if st.button("Submit"):
-        context.insert_tran(date, tran_type, value, cat, note)
+    if st.button("Submit", key="add_money_flow_submit_button", use_container_width=True, type="primary"):
+        new_tags = set(new_tags)
+        new_tags = [x for x in new_tags if x not in tags]
+        context.insert_tran(date, tran_type, value, ",".join(tags + new_tags), note)
+        clear_add_money_flow_dia_state()
         st.rerun()
 
 

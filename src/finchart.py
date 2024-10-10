@@ -2,12 +2,13 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
-from palettable.colorbrewer.qualitative import Pastel1_9, Set3_12, Pastel2_8
+from palettable.colorbrewer.qualitative import Pastel1_9, Set3_12, Pastel2_8, Paired_12
+
+unsaturated_colors = px.colors.qualitative.Pastel
+morandi_like_colors = Pastel1_9.hex_colors[1:] + Pastel1_9.hex_colors[:1] + Pastel2_8.hex_colors
 
 
 def allocation_pie(df: pd.DataFrame) -> go.Figure:
-    unsaturated_colors = px.colors.qualitative.Pastel
-    morandi_like_colors = Pastel1_9.hex_colors[1:] + Pastel1_9.hex_colors[:1] + Pastel2_8.hex_colors
     colors = morandi_like_colors + unsaturated_colors
     df = df.sort_values(by="NET_WORTH", ascending=False)
     labels = [f"{a}-{s}" if a != s else s for a, s in zip(df["ACCOUNT"], df["SUBACCOUNT"])]
@@ -26,6 +27,46 @@ def allocation_pie(df: pd.DataFrame) -> go.Figure:
         height=600,
     )
     fig.update_traces(textfont_size=12)
+    return fig
+
+
+def profit_bar(df: pd.DataFrame) -> go.Figure:
+    df = df.sort_values(by="PROFIT", ascending=True)
+    df = df[df["PROFIT"] != 0]
+    colors = morandi_like_colors + unsaturated_colors
+    # colors = Paired_12.hex_colors
+
+    names = df["ACCOUNT"] + "-" + df["SUBACCOUNT"]
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=df["PROFIT"],
+            y=names,
+            text=df["PROFIT"].apply(lambda x: f"¥{x:,.0f}"),
+            textposition='outside',
+            textfont=dict(size=10),
+            hoverinfo='y+text',
+            name="profit",
+            orientation='h',
+            width=0.6,
+            marker=dict(color=colors[:len(df)][::-1]),
+            showlegend=False,
+        ))
+
+    fig.update_layout(barmode='group',
+                      bargap=0.05,
+                      bargroupgap=0.02,
+                      xaxis_title="Profit",
+                      yaxis_title="Asset",
+                      margin=dict(l=50, r=50, t=40, b=20),
+                      width=1000,
+                      height=600,
+                      uniformtext_minsize=8,
+                      uniformtext_mode='hide',
+                      showlegend=False,
+                      yaxis=dict(tickmode='linear', tick0=0, dtick=1, tickfont=dict(size=12)))
+
     return fig
 
 

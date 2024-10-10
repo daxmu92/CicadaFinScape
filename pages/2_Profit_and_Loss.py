@@ -6,6 +6,7 @@ sys.path.append("..")
 from src.context import FinContext
 import src.fwidgets as fw
 import src.finutils as fu
+import src.finchart as fc
 
 st.set_page_config(page_title="Profit and Loss", layout="wide")
 st.title("Profit and Loss")
@@ -29,8 +30,9 @@ selected_txt_list = [f"# {m}\n{fu.gen_txt_with_arrow(profit)}" for m, profit in 
 month = fw.button_selector("profit_and_loss_month_selector", candidate_txt_list, 6, fu.cur_month() - 1, selected_txt_list) + 1
 selected_date = fu.get_date(year, month)
 
-s, e = context.get_date_range()
-date_list = fu.date_list(s, e)
-start_date, end_date = st.select_slider("Select a period", options=date_list, value=(s, e))
-profit_waterfall = context.profit_waterfall(start_date, end_date)
-st.plotly_chart(profit_waterfall, theme="streamlit", use_container_width=True)
+df = context.query_asset(date=selected_date)
+st.plotly_chart(fc.profit_bar(df), use_container_width=True)
+
+st.write("## \n" * 3)
+
+st.divider()

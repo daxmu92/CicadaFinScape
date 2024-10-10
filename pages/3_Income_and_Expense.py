@@ -52,7 +52,8 @@ with tabs[1]:
 
     row: st = grid(2, vertical_align="bottom")
     if row.button("**Add money flow record**", key="add_new_money_flow_button", use_container_width=True, type="primary"):
-        fw.add_money_flow_dia()
+        fw.clear_add_money_flow_dia_state()
+        fw.add_money_flow_dia(date)
     if row.button("**Delet selected record**", key="delete_money_flow_button", use_container_width=True):
         fw.delete_selected_money_flow_dia(id_list)
 

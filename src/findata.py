@@ -244,6 +244,16 @@ class FinTranData(FinBaseData):
         print(self._df)
         self.load_from_df(self._df)
 
+    def get_tags(self) -> list[str]:
+        df = self._df[["CAT"]]
+        df = df.dropna()
+        splitted_cat = df["CAT"].str.split(",")
+        tags = set()
+        for cat in splitted_cat:
+            tags.update(cat)
+        return list(tags)
+
+
 class FinDataContext():
 
     def __init__(self, db_path: str):
@@ -344,3 +354,6 @@ class FinDataContext():
 
     def reindex_tran_id(self):
         self.tran_data.reindex()
+
+    def get_tran_tags(self) -> list[str]:
+        return self.tran_data.get_tags()
