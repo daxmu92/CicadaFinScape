@@ -8,11 +8,12 @@ import src.fwidgets as fw
 import src.finutils as fu
 import src.finchart as fc
 
-context: FinContext = st.session_state['context']
-
 st.set_page_config(page_title="Income and Expense", layout="wide")
 st.title("Income and Expense")
 st.divider()
+fw.check_all()
+
+context: FinContext = st.session_state['context']
 
 cur_year = fu.cur_year()
 index = fw.get_year_list().index(cur_year)

@@ -36,6 +36,7 @@ class FinBaseData():
             db.drop_table(self._table)
             db.create_table(self._table)
             db.commit()
+        self.load_from_db()
 
     def _query(self, filter: dict) -> pd.DataFrame:
         return self._df.loc[(self._df[list(filter)] == pd.Series(filter)).all(axis=1)]
@@ -162,7 +163,13 @@ class FinAssetData(FinBaseData):
 
     def query_date_range(self) -> tuple[str, str]:
         df = self._df
-        return df["DATE"].min(), df["DATE"].max()
+        s = df["DATE"].min()
+        e = df["DATE"].max()
+        if pd.isna(s):
+            s = fu.norm_date(fu.cur_date())
+        if pd.isna(e):
+            e = fu.norm_date(fu.cur_date())
+        return s, e
 
     def load_from_df(self, df: pd.DataFrame, append: bool = False):
         if not append:

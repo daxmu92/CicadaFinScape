@@ -7,12 +7,12 @@ from src.context import FinContext
 import src.fwidgets as fw
 import src.finutils as fu
 
-context: FinContext = st.session_state['context']
-
 st.set_page_config(page_title="Profit and Loss", layout="wide")
 st.title("Profit and Loss")
 st.divider()
 fw.check_all()
+
+context: FinContext = st.session_state['context']
 
 cur_year = fu.cur_year()
 index = fw.get_year_list().index(cur_year)

@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 import sys
-import re
 from streamlit_extras.grid import grid
 from streamlit_pills import pills
 import plotly.express as px
@@ -17,6 +15,8 @@ import src.finutils as fu
 st.set_page_config(page_title="Account", layout="wide")
 st.title("Account")
 st.divider()
+fw.check_context()
+
 context: FinContext = st.session_state['context']
 acc_name_list = context.config.acc_name_list()
 
@@ -24,7 +24,6 @@ if not (fw.check_account() and fw.check_subaccount() and fw.check_database()):
     st.stop()
 
 ACC_KEY = "account_test_acc"
-
 selected_acc_index = fw.button_selector(ACC_KEY, acc_name_list, 6)
 selected_acc = acc_name_list[selected_acc_index]
 

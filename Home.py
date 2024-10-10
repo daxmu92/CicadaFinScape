@@ -9,6 +9,9 @@ import src.finchart as fc
 import src.finutils as fu
 
 st.set_page_config(page_title="Cicada Financial Scape", page_icon=":clipboard:", layout="wide")
+st.title("Welcome to Cicada Financial Scape!")
+st.divider()
+
 curr_path = __file__
 curr_dir = os.path.dirname(curr_path)
 data_dir = os.path.join(curr_dir, "data")
@@ -17,20 +20,11 @@ if not os.path.exists(data_dir):
     os.chmod(data_dir, 0o777)
 
 config_path = os.path.join(data_dir, "config.json")
-csv_path = os.path.join(data_dir, "data.csv")
 db_path = os.path.join(data_dir, "test.db")
-
 # Init context
 if "context" not in st.session_state:
     st.session_state['context'] = FinContext(config_path, db_path)
 context: FinContext = st.session_state['context']
-
-st.title("Welcome to Cicada Financial Scape!")
-st.divider()
-
-if not context.validate():
-    fw.init_db()
-    st.stop()
 
 fw.check_all()
 

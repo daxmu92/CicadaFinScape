@@ -14,6 +14,11 @@ import src.finutils as fu
 from src.st_utils import FinLogger
 
 
+def check_context():
+    if "context" not in st.session_state:
+        st.switch_page("Home.py")
+
+
 def check_account():
     context: FinContext = st.session_state['context']
     if not context.config.acc:
@@ -32,20 +37,20 @@ def check_subaccount():
 
 
 def check_database():
+    context: FinContext = st.session_state['context']
+    if not context.validate():
+        init_db()
+        st.stop()
     return True
-    # TODO
-    # context: FinContext = st.session_state['context']
-    # if context.data.empty(finsql.ASSET_TABLE):
-    #     st.warning(f"You don't have any data record, go to Account/Cicada journey page to add record")
-    #     return False
 
 
 def check_all():
+    check_context()
+    if not check_database():
+        st.stop()
     if not check_account():
         st.stop()
     if not check_subaccount():
-        st.stop()
-    if not check_database():
         st.stop()
 
 
@@ -132,8 +137,8 @@ def clear_data_dia():
     st.write("# WARNING: All of your data will be clear and can not recover")
     if st.button("Confirm", key="side_bar_clear_dia_confirm"):
         context: FinContext = st.session_state['context']
-        context.clear_config()
-        context.write_config()
+        context.config.clear_config()
+        context.config.write_config()
         context.init_db()
         st.rerun()
 

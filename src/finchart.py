@@ -21,7 +21,7 @@ def allocation_pie(df: pd.DataFrame) -> go.Figure:
                marker=dict(colors=colors)))
     fig.update_layout(
         margin=dict(l=20, r=20, t=20, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
         width=400,
         height=600,
     )
