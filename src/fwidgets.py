@@ -1,9 +1,9 @@
 from typing import Sequence
+from streamlit_extras.tags import tagger_component
 import streamlit as st
 import warnings
 import json
 import zipfile
-import random
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -449,7 +449,8 @@ def add_money_flow_dia(date: str):
     new_tag = g.text_input("New tags", key="add_money_flow_new_tags_text_input")
     if g.button("Add", key="add_money_flow_new_tags_add_button", use_container_width=True):
         new_tags.append(new_tag)
-    st.write("Tags will be added: ", ", ".join(new_tags))
+    # st.write("Tags will be added: ", ", ".join(new_tags))
+    tagger_component("Tags will be added: ", new_tags)
 
     note = st.text_input("Note", key="add_money_flow_note_input")
     if st.button("Submit", key="add_money_flow_submit_button", use_container_width=True, type="primary"):

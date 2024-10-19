@@ -47,6 +47,11 @@ class FinBaseData():
             df = df[df[col].between(start, end)]
         return df
 
+    def query_period(self, start_date: str, end_date: str) -> pd.DataFrame:
+        period_filter = {"DATE": (start_date, end_date)}
+        filter = {}
+        return self._query_period(period_filter, filter)
+
     def load_from_df(self, df: pd.DataFrame, append: bool = False):
         if not append:
             self.reset()
@@ -155,11 +160,6 @@ class FinAssetData(FinBaseData):
         max_date = df_filtered['DATE'].max()
         result = df_filtered[df_filtered['DATE'] == max_date]
         return result
-
-    def query_period(self, start_date: str, end_date: str) -> pd.DataFrame:
-        period_filter = {"DATE": (start_date, end_date)}
-        filter = {}
-        return self._query_period(period_filter, filter)
 
     def query_date_range(self) -> tuple[str, str]:
         df = self._df
@@ -345,6 +345,9 @@ class FinDataContext():
 
     def query_tran(self, date: str = "", type: str = "", cat: str = "") -> pd.DataFrame:
         return self.tran_data.query(date, type, cat)
+
+    def query_period_tran(self, start_date: str, end_date: str) -> pd.DataFrame:
+        return self.tran_data.query_period(start_date, end_date)
 
     def df_to_asset(self, df: pd.DataFrame, append: bool = False):
         self.asset_data.load_from_df(df, append)

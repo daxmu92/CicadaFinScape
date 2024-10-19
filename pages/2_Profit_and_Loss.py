@@ -34,5 +34,4 @@ df = context.query_asset(date=selected_date)
 st.plotly_chart(fc.profit_bar(df), use_container_width=True)
 
 st.write("## \n" * 3)
-
 st.divider()

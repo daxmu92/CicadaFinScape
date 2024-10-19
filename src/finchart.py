@@ -160,3 +160,17 @@ def io_flow_chart(tran_df: pd.DataFrame, total_inflow: float) -> tuple[go.Figure
 
     config = {'displayModeBar': False}
     return fig, config
+
+
+def asset_line(df: pd.DataFrame, kind: str) -> go.Figure:
+    fig = px.line(df, x="DATE", y=kind, line_shape="spline")
+    fig.update_layout(
+        xaxis_title="Date",
+        yaxis_title=kind,
+        # Hide plotly buttons
+        updatemenus=[],
+        showlegend=False,
+        margin=dict(t=10, b=10, l=10, r=10),  # Adjust top margin
+        height=400  # Adjust overall height of the chart
+    )
+    return fig

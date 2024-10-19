@@ -109,6 +109,9 @@ class FinContext:
         df = df[df["DATE"].between(start_date, end_date)]
         return df
 
+    def query_period_tran(self, start_date: str, end_date: str) -> pd.DataFrame:
+        return self.data.query_period_tran(start_date, end_date)
+
     def get_date_range(self) -> tuple[str, str]:
         return self.data.query_date_range()
 
