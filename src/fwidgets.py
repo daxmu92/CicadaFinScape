@@ -368,7 +368,6 @@ def show_last_and_cur_record(last_row: pd.DataFrame, cur_row: pd.DataFrame):
 
     if not info_df.empty:
         info_df = fu.format_dec_df(info_df, ["NET_WORTH", "INFLOW", "PROFIT"])
-        # st.info(info_str)
         st.table(info_df)
     else:
         st.info(f"Doesn't find previous record")
@@ -431,7 +430,6 @@ def get_st_color_str_by_pos(value, pos_color: str = "green", neg_color: str = "r
 
 def clear_add_money_flow_dia_state():
     st.session_state["add_money_flow_new_tags"] = []
-    st.session_state["add_money_flow_new_tags_text_input"] = ""
 
 
 @st.dialog("ADD A MONEY FLOW", width="large")

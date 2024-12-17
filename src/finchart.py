@@ -174,3 +174,20 @@ def asset_line(df: pd.DataFrame, kind: str) -> go.Figure:
         height=400  # Adjust overall height of the chart
     )
     return fig
+
+def asset_view_chart(df: pd.DataFrame) -> go.Figure:
+    df = df[["DATE", "NET_WORTH", "PROFIT", "INFLOW"]]
+    # fig = px.line(df, x="DATE", y=["NET_WORTH", "PROFIT", "INFLOW"], line_shape="spline")
+    # generate a line figure, show the values
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df["DATE"], y=df["NET_WORTH"], mode="lines", name="Net Worth", line_shape="spline"))
+    fig.add_trace(go.Scatter(x=df["DATE"], y=df["PROFIT"], mode="lines", name="Profit", line_shape="spline"))
+    fig.add_trace(go.Scatter(x=df["DATE"], y=df["INFLOW"], mode="lines", name="Inflow", line_shape="spline"))
+
+    # show the values on the chart
+    for col in ["NET_WORTH", "PROFIT", "INFLOW"]:
+        fig.update_traces(
+            text=[f"¥{val:,.0f}" for val in df[col]], 
+            selector=dict(name=col.replace("_", " ").title())
+        )
+    return fig
