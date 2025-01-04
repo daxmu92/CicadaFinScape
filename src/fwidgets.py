@@ -498,6 +498,8 @@ def get_date_list() -> list[str]:
 def get_year_list() -> list[int]:
     context: FinContext = st.session_state["context"]
     s, e = context.get_date_range()
+    cur_year = str(fu.cur_year()) + "-01"
+    e = max(cur_year, e)
     year_list = fu.year_list(s, e)
     return year_list
 
